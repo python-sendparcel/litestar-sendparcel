@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+from typing import Annotated
 
-from litestar import Request, post
+from litestar import Controller, Request, post
+from litestar.params import Dependency
 from sendparcel.exceptions import CommunicationError, InvalidCallbackError
 from sendparcel.flow import ShipmentFlow
 from sendparcel.protocols import ShipmentRepository
@@ -18,52 +20,63 @@ from litestar_sendparcel.schemas import CallbackResponse
 logger = logging.getLogger(__name__)
 
 
-@post("/callbacks/{provider_slug:str}/{shipment_id:str}")
-async def provider_callback(
-    provider_slug: str,
-    shipment_id: str,
-    request: Request,
-    config: SendparcelConfig,
-    repository: ShipmentRepository,
-    retry_store: CallbackRetryStore | None = None,
-) -> CallbackResponse:
-    """Handle provider callback using core flow and retry hooks."""
-    flow = ShipmentFlow(repository=repository, config=config.providers)
+class CallbackController(Controller):
+    """Provider callback endpoints."""
 
-    try:
-        shipment = await repository.get_by_id(shipment_id)
-    except KeyError as exc:
-        raise ShipmentNotFoundError(shipment_id) from exc
+    tags = ["callbacks"]
 
-    if str(shipment.provider) != provider_slug:
-        raise InvalidCallbackError("Provider slug mismatch")
+    @post("/callbacks/{provider_slug:str}/{shipment_id:str}")
+    async def handle_callback(
+        self,
+        provider_slug: str,
+        shipment_id: str,
+        request: Request,
+        config: Annotated[SendparcelConfig, Dependency(skip_validation=True)],
+        repository: Annotated[
+            ShipmentRepository, Dependency(skip_validation=True)
+        ],
+        retry_store: Annotated[
+            CallbackRetryStore | None,
+            Dependency(skip_validation=True),
+        ] = None,
+    ) -> CallbackResponse:
+        """Handle provider callback using core flow and retry hooks."""
+        flow = ShipmentFlow(repository=repository, config=config.providers)
 
-    raw_body = await request.body()
-    payload = await request.json()
-    headers = dict(request.headers)
+        try:
+            shipment = await repository.get_by_id(shipment_id)
+        except KeyError as exc:
+            raise ShipmentNotFoundError(shipment_id) from exc
 
-    try:
-        updated = await flow.handle_callback(
-            shipment,
-            payload,
-            headers,
-            raw_body=raw_body,
+        if str(shipment.provider) != provider_slug:
+            raise InvalidCallbackError("Provider slug mismatch")
+
+        raw_body = await request.body()
+        payload = await request.json()
+        headers = dict(request.headers)
+
+        try:
+            updated = await flow.handle_callback(
+                shipment,
+                payload,
+                headers,
+                raw_body=raw_body,
+            )
+        except InvalidCallbackError:
+            raise
+        except CommunicationError as exc:
+            await enqueue_callback_retry(
+                retry_store,
+                provider_slug=provider_slug,
+                shipment_id=shipment_id,
+                payload=payload,
+                headers=headers,
+                reason=str(exc),
+            )
+            raise
+
+        return CallbackResponse(
+            provider=provider_slug,
+            status="accepted",
+            shipment_status=str(updated.status),
         )
-    except InvalidCallbackError:
-        raise
-    except CommunicationError as exc:
-        await enqueue_callback_retry(
-            retry_store,
-            provider_slug=provider_slug,
-            shipment_id=shipment_id,
-            payload=payload,
-            headers=headers,
-            reason=str(exc),
-        )
-        raise
-
-    return CallbackResponse(
-        provider=provider_slug,
-        status="accepted",
-        shipment_status=str(updated.status),
-    )

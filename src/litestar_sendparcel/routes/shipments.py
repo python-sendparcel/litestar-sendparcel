@@ -2,64 +2,90 @@
 
 from __future__ import annotations
 
-from litestar import get, post
-from litestar.exceptions import HTTPException
+import logging
+from typing import Annotated
+
+from litestar import Controller, get, post
+from litestar.params import Dependency
 from sendparcel.flow import ShipmentFlow
 from sendparcel.protocols import ShipmentRepository
 
 from litestar_sendparcel.config import SendparcelConfig
+from litestar_sendparcel.exceptions import (
+    ConfigurationError,
+    ShipmentNotFoundError,
+)
 from litestar_sendparcel.protocols import OrderResolver
 from litestar_sendparcel.schemas import CreateShipmentRequest, ShipmentResponse
 
-
-@get("/shipments/health")
-async def shipments_health() -> dict[str, str]:
-    """Healthcheck endpoint for shipment routes."""
-    return {"status": "ok"}
+logger = logging.getLogger(__name__)
 
 
-@post("/shipments")
-async def create_shipment(
-    data: CreateShipmentRequest,
-    config: SendparcelConfig,
-    repository: ShipmentRepository,
-    order_resolver: OrderResolver | None,
-) -> ShipmentResponse:
-    """Create a shipment via ShipmentFlow."""
-    if order_resolver is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Order resolver not configured",
-        )
+class ShipmentController(Controller):
+    """Shipment CRUD endpoints."""
 
-    provider_slug = data.provider or config.default_provider
-    order = await order_resolver.resolve(data.order_id)
-    flow = ShipmentFlow(repository=repository, config=config.providers)
-    shipment = await flow.create_shipment(order, provider_slug)
-    return ShipmentResponse.from_shipment(shipment)
+    path = "/shipments"
+    tags = ["shipments"]
 
+    @get("/health")
+    async def shipments_health(self) -> dict[str, str]:
+        """Healthcheck endpoint for shipment routes."""
+        return {"status": "ok"}
 
-@post("/shipments/{shipment_id:str}/label")
-async def create_label(
-    shipment_id: str,
-    config: SendparcelConfig,
-    repository: ShipmentRepository,
-) -> ShipmentResponse:
-    """Create shipment label via provider."""
-    flow = ShipmentFlow(repository=repository, config=config.providers)
-    shipment = await repository.get_by_id(shipment_id)
-    shipment = await flow.create_label(shipment)
-    return ShipmentResponse.from_shipment(shipment)
+    @post("/")
+    async def create_shipment(
+        self,
+        data: CreateShipmentRequest,
+        config: Annotated[SendparcelConfig, Dependency(skip_validation=True)],
+        repository: Annotated[
+            ShipmentRepository, Dependency(skip_validation=True)
+        ],
+        order_resolver: Annotated[
+            OrderResolver | None, Dependency(skip_validation=True)
+        ] = None,
+    ) -> ShipmentResponse:
+        """Create a shipment via ShipmentFlow."""
+        if order_resolver is None:
+            raise ConfigurationError("Order resolver not configured")
 
+        provider_slug = data.provider or config.default_provider
+        order = await order_resolver.resolve(data.order_id)
+        flow = ShipmentFlow(repository=repository, config=config.providers)
+        shipment = await flow.create_shipment(order, provider_slug)
+        return ShipmentResponse.from_shipment(shipment)
 
-@get("/shipments/{shipment_id:str}/status")
-async def fetch_status(
-    shipment_id: str,
-    config: SendparcelConfig,
-    repository: ShipmentRepository,
-) -> ShipmentResponse:
-    """Fetch and persist latest provider shipment status."""
-    flow = ShipmentFlow(repository=repository, config=config.providers)
-    shipment = await repository.get_by_id(shipment_id)
-    shipment = await flow.fetch_and_update_status(shipment)
-    return ShipmentResponse.from_shipment(shipment)
+    @post("/{shipment_id:str}/label")
+    async def create_label(
+        self,
+        shipment_id: str,
+        config: Annotated[SendparcelConfig, Dependency(skip_validation=True)],
+        repository: Annotated[
+            ShipmentRepository, Dependency(skip_validation=True)
+        ],
+    ) -> ShipmentResponse:
+        """Create shipment label via provider."""
+        flow = ShipmentFlow(repository=repository, config=config.providers)
+        try:
+            shipment = await repository.get_by_id(shipment_id)
+        except KeyError as exc:
+            raise ShipmentNotFoundError(shipment_id) from exc
+        shipment = await flow.create_label(shipment)
+        return ShipmentResponse.from_shipment(shipment)
+
+    @get("/{shipment_id:str}/status")
+    async def fetch_status(
+        self,
+        shipment_id: str,
+        config: Annotated[SendparcelConfig, Dependency(skip_validation=True)],
+        repository: Annotated[
+            ShipmentRepository, Dependency(skip_validation=True)
+        ],
+    ) -> ShipmentResponse:
+        """Fetch and persist latest provider shipment status."""
+        flow = ShipmentFlow(repository=repository, config=config.providers)
+        try:
+            shipment = await repository.get_by_id(shipment_id)
+        except KeyError as exc:
+            raise ShipmentNotFoundError(shipment_id) from exc
+        shipment = await flow.fetch_and_update_status(shipment)
+        return ShipmentResponse.from_shipment(shipment)
