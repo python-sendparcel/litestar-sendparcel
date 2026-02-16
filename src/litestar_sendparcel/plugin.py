@@ -7,6 +7,7 @@ from litestar.di import Provide
 from sendparcel.protocols import ShipmentRepository
 
 from litestar_sendparcel.config import SendparcelConfig
+from litestar_sendparcel.exceptions import EXCEPTION_HANDLERS
 from litestar_sendparcel.protocols import CallbackRetryStore, OrderResolver
 from litestar_sendparcel.registry import LitestarPluginRegistry
 from litestar_sendparcel.routes.callbacks import provider_callback
@@ -38,6 +39,7 @@ def create_shipping_router(
             fetch_status,
             provider_callback,
         ],
+        exception_handlers=EXCEPTION_HANDLERS,
         dependencies={
             "config": Provide(lambda: config, sync_to_thread=False),
             "repository": Provide(lambda: repository, sync_to_thread=False),
