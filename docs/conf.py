@@ -19,7 +19,7 @@ extensions = [
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "plans"]
 
-html_theme = "sphinx_rtd_theme"
+html_theme = "furo"
 
 myst_enable_extensions = [
     "colon_fence",
