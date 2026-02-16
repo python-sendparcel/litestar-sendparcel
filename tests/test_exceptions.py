@@ -119,7 +119,7 @@ def test_configuration_error_returns_500():
 
 
 def test_exception_handlers_is_dict():
-    """EXCEPTION_HANDLERS should be a dict mapping exception types to callables."""
+    """EXCEPTION_HANDLERS is a dict of exception types to callables."""
     assert isinstance(EXCEPTION_HANDLERS, dict)
     assert len(EXCEPTION_HANDLERS) == 6
     for exc_type, handler in EXCEPTION_HANDLERS.items():

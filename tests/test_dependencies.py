@@ -25,5 +25,6 @@ class TestDependenciesModule:
         """Module should only export expected names (or nothing)."""
         public = [name for name in dir(deps_mod) if not name.startswith("_")]
         # Placeholder module has no public names, which is fine
-        # If provide_* functions are added later, they'll be tested by test_provide_functions_are_callable
+        # If provide_* functions are added later, they'll be
+        # tested by test_provide_functions_are_callable
         assert isinstance(public, list)
