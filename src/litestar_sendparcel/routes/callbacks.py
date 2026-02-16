@@ -23,9 +23,10 @@ logger = logging.getLogger(__name__)
 class CallbackController(Controller):
     """Provider callback endpoints."""
 
+    path = "/callbacks"
     tags = ["callbacks"]
 
-    @post("/callbacks/{provider_slug:str}/{shipment_id:str}")
+    @post("/{provider_slug:str}/{shipment_id:str}")
     async def handle_callback(
         self,
         provider_slug: str,

@@ -25,3 +25,8 @@ def test_shipment_controller_has_tags():
 def test_callback_controller_has_tags():
     """CallbackController has tags set."""
     assert CallbackController.tags == ["callbacks"]
+
+
+def test_callback_controller_has_path():
+    """CallbackController has path set."""
+    assert CallbackController.path == "/callbacks"
