@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Przesyłka #{{ shipment.id }} — Sendparcel Demo{% endblock %}
+{% block content %}
+<div class="page-header d-print-none mb-3">
+  <div class="row align-items-center">
+    <div class="col">
+      <div class="page-pretitle">Przesyłka</div>
+      <h2 class="page-title">#{{ shipment.id }}</h2>
+    </div>
+    <div class="col-auto ms-auto">
+      <a href="/orders/{{ shipment.order_id }}" class="btn btn-outline-secondary">
+        Powrót do zamówienia
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="row row-deck row-cards">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Dane przesyłki</h3>
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-5">Status:</dt>
+          <dd class="col-7">
+            <span id="shipment-status"
+                  class="badge bg-{{ status_color(shipment.status) }}">
+              {{ status_label(shipment.status) }}
+            </span>
+          </dd>
+          <dt class="col-5">Dostawca:</dt>
+          <dd class="col-7">{{ shipment.provider }}</dd>
+          <dt class="col-5">ID zewnętrzny:</dt>
+          <dd class="col-7">{{ shipment.external_id or "—" }}</dd>
+          <dt class="col-5">Nr śledzenia:</dt>
+          <dd class="col-7">{{ shipment.tracking_number or "—" }}</dd>
+          <dt class="col-5">Etykieta:</dt>
+          <dd class="col-7">
+            {% if shipment.label_url %}
+            <a href="{{ shipment.label_url }}" class="btn btn-sm btn-outline-primary">
+              Pobierz etykietę
+            </a>
+            {% else %}
+            —
+            {% endif %}
+          </dd>
+        </dl>
+
+        <div class="mt-3">
+          <button class="btn btn-sm btn-outline-info"
+                  hx-get="/shipments/{{ shipment.id }}/refresh-status"
+                  hx-target="#shipment-status"
+                  hx-swap="outerHTML">
+            Odśwież status
+          </button>
+          {% if shipment.status in ("new", "created", "label_ready") %}
+          <form method="post" action="/shipments/{{ shipment.id }}/create-label"
+                class="d-inline">
+            <button type="submit" class="btn btn-sm btn-outline-success">
+              Generuj etykietę
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Symulator dostawy</h3>
+      </div>
+      <div class="card-body" id="sim-panel"
+           hx-get="/sim/panel/{{ shipment.id }}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div class="text-secondary">Ładowanie panelu symulatora...</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

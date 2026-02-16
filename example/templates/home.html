@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Strona główna — Sendparcel Demo{% endblock %}
+{% block content %}
+<div class="page-header d-print-none mb-3">
+  <div class="row align-items-center">
+    <div class="col-auto">
+      <h2 class="page-title">Zamówienia</h2>
+    </div>
+    <div class="col-auto ms-auto">
+      <a href="/orders/new" class="btn btn-primary">Nowe zamówienie</a>
+    </div>
+  </div>
+</div>
+
+{% if orders %}
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Referencja</th>
+          <th>Odbiorca</th>
+          <th>Rozmiar</th>
+          <th>Przesyłki</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td>{{ order.id }}</td>
+          <td>{{ order.reference }}</td>
+          <td>{{ order.recipient_name or order.recipient_email }}</td>
+          <td>{{ order.package_size }}</td>
+          <td>{{ order.shipments | length }}</td>
+          <td>
+            <a href="/orders/{{ order.id }}" class="btn btn-sm btn-outline-primary">
+              Szczegóły
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty">
+  <p class="empty-title">Brak zamówień</p>
+  <p class="empty-subtitle text-secondary">
+    Utwórz pierwsze zamówienie, aby rozpocząć.
+  </p>
+  <div class="empty-action">
+    <a href="/orders/new" class="btn btn-primary">Nowe zamówienie</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

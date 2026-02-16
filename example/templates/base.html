@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Sendparcel Demo{% endblock %}</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  </head>
+  <body class="layout-fluid">
+    <div class="page">
+      <header class="navbar navbar-expand-md d-print-none">
+        <div class="container-xl">
+          <h1 class="navbar-brand navbar-brand-autodark d-none-navbar-btn">
+            <a href="/">Sendparcel Demo</a>
+          </h1>
+          <div class="navbar-nav flex-row order-md-last">
+            <span class="nav-link text-muted">Litestar + HTMX + Tabler</span>
+          </div>
+        </div>
+      </header>
+      <div class="page-wrapper">
+        <div class="page-body">
+          <div class="container-xl">
+            {% block content %}{% endblock %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Sendparcel Demo{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-4">
+  <div class="col-md-8">
+    <div class="card border-{{ card_type }}">
+      <div class="card-body text-center">
+        <h3 class="card-title text-{{ card_type }}">{{ title }}</h3>
+        <p class="text-secondary">{{ message }}</p>
+        {% if link_url %}
+        <a href="{{ link_url }}" class="btn btn-primary">{{ link_text }}</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
