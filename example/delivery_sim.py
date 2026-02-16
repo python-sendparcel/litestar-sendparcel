@@ -7,7 +7,6 @@ from uuid import uuid4
 
 from litestar import Router, get, post
 from litestar.response import Template
-
 from sendparcel.enums import ShipmentStatus
 from sendparcel.provider import BaseProvider
 from sendparcel.types import (

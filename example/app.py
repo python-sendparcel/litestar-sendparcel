@@ -3,26 +3,20 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from decimal import Decimal
 from pathlib import Path
-
-from litestar import Litestar, Request, get, post
-from litestar.contrib.jinja import JinjaTemplateEngine
-from litestar.exceptions import NotFoundException
-from litestar.response import Redirect, Template
-from litestar.template import TemplateConfig
-from sqlalchemy import func, select
-
-from sendparcel.enums import ShipmentStatus
-from sendparcel.flow import ShipmentFlow
-from sendparcel.registry import registry
 
 from delivery_sim import (
     STATUS_LABELS,
     DeliverySimProvider,
     sim_router,
 )
+from litestar import Litestar, Request, get, post
+from litestar.contrib.jinja import JinjaTemplateEngine
+from litestar.exceptions import NotFoundException
+from litestar.response import Redirect, Template
+from litestar.template import TemplateConfig
 from models import (
     Order,
     Shipment,
@@ -30,6 +24,10 @@ from models import (
     async_session,
     init_db,
 )
+from sendparcel.enums import ShipmentStatus
+from sendparcel.flow import ShipmentFlow
+from sendparcel.registry import registry
+from sqlalchemy import func, select
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
@@ -164,10 +162,8 @@ async def order_ship(order_id: int, request: Request) -> Redirect:
         repo = ShipmentRepository(session)
         flow = ShipmentFlow(repository=repo)
         shipment = await flow.create_shipment(order, provider_slug)
-        try:
+        with suppress(NotImplementedError):
             shipment = await flow.create_label(shipment)
-        except NotImplementedError:
-            pass
         await session.commit()
         return Redirect(path=f"/shipments/{shipment.id}")
 
@@ -196,10 +192,8 @@ async def shipment_create_label(shipment_id: int) -> Redirect:
         repo = ShipmentRepository(session)
         flow = ShipmentFlow(repository=repo)
         shipment = await repo.get_by_id(str(shipment_id))
-        try:
+        with suppress(NotImplementedError):
             shipment = await flow.create_label(shipment)
-        except NotImplementedError:
-            pass
         await session.commit()
     return Redirect(path=f"/shipments/{shipment_id}")
 

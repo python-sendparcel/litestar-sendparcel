@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from sendparcel.types import AddressInfo, ParcelInfo
 from sqlalchemy import ForeignKey, Numeric, String, Text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -16,8 +17,6 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship,
 )
-
-from sendparcel.types import AddressInfo, ParcelInfo
 
 
 class Base(DeclarativeBase):
