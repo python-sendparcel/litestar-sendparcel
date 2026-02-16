@@ -24,7 +24,8 @@ class OrderResolver(Protocol):
 class CallbackRetryStore(Protocol):
     """Storage abstraction for the webhook retry queue.
 
-    Full lifecycle: store -> get_due -> mark_succeeded/mark_failed/mark_exhausted.
+    Full lifecycle: store -> get_due ->
+    mark_succeeded / mark_failed / mark_exhausted.
     """
 
     async def store_failed_callback(

@@ -66,4 +66,4 @@ def test_getattr_raises_for_unknown():
     import pytest
 
     with pytest.raises(AttributeError, match="no_such_attribute"):
-        litestar_sendparcel.no_such_attribute
+        litestar_sendparcel.no_such_attribute  # noqa: B018

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from litestar import Controller, Request, post
 from litestar.params import Dependency
@@ -24,7 +24,7 @@ class CallbackController(Controller):
     """Provider callback endpoints."""
 
     path = "/callbacks"
-    tags = ["callbacks"]
+    tags: ClassVar[list[str]] = ["callbacks"]
 
     @post("/{provider_slug:str}/{shipment_id:str}")
     async def handle_callback(

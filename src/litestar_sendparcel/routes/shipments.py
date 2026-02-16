@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from litestar import Controller, get, post
 from litestar.params import Dependency
@@ -25,7 +25,7 @@ class ShipmentController(Controller):
     """Shipment CRUD endpoints."""
 
     path = "/shipments"
-    tags = ["shipments"]
+    tags: ClassVar[list[str]] = ["shipments"]
 
     @get("/health")
     async def shipments_health(self) -> dict[str, str]:
