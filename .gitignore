@@ -26,5 +26,8 @@ dist/
 .vscode/
 .idea/
 
+# Docs build
+docs/_build/
+
 # OS
 .DS_Store
