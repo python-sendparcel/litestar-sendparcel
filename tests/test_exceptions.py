@@ -116,3 +116,13 @@ def test_configuration_error_returns_500():
         resp = client.get("/test")
         assert resp.status_code == 500
         assert resp.json()["code"] == "configuration_error"
+
+
+def test_exception_handlers_is_dict():
+    """EXCEPTION_HANDLERS should be a dict mapping exception types to callables."""
+    assert isinstance(EXCEPTION_HANDLERS, dict)
+    assert len(EXCEPTION_HANDLERS) == 6
+    for exc_type, handler in EXCEPTION_HANDLERS.items():
+        assert isinstance(exc_type, type)
+        assert issubclass(exc_type, Exception)
+        assert callable(handler)

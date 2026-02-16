@@ -1,5 +1,8 @@
 """Tests for SendparcelConfig."""
 
+import pytest
+from pydantic import ValidationError
+
 from litestar_sendparcel.config import SendparcelConfig
 
 
@@ -32,3 +35,30 @@ def test_config_env_prefix(monkeypatch):
     config = SendparcelConfig()
     assert config.default_provider == "inpost"
     assert config.retry_max_attempts == 10
+
+
+def test_default_provider_required():
+    """Config must fail without default_provider."""
+    with pytest.raises(ValidationError):
+        SendparcelConfig()
+
+
+def test_default_provider_accepted():
+    """Config accepts a default_provider string."""
+    cfg = SendparcelConfig(default_provider="inpost")
+    assert cfg.default_provider == "inpost"
+
+
+def test_providers_accepts_nested_dict():
+    """providers accepts nested provider config dicts."""
+    cfg = SendparcelConfig(
+        default_provider="x",
+        providers={"inpost": {"api_key": "abc"}},
+    )
+    assert cfg.providers["inpost"]["api_key"] == "abc"
+
+
+def test_retry_enabled_default():
+    """retry_enabled defaults to True."""
+    cfg = SendparcelConfig(default_provider="x")
+    assert cfg.retry_enabled is True
