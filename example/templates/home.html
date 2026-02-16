@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Strona główna — Sendparcel Demo{% endblock %}
+{% block title %}Home — Sendparcel Demo{% endblock %}
 {% block content %}
 <div class="page-header d-print-none mb-3">
   <div class="row align-items-center">
     <div class="col-auto">
-      <h2 class="page-title">Zamówienia</h2>
+      <h2 class="page-title">Orders</h2>
     </div>
     <div class="col-auto ms-auto">
-      <a href="/orders/new" class="btn btn-primary">Nowe zamówienie</a>
+      <a href="/orders/new" class="btn btn-primary">New order</a>
     </div>
   </div>
 </div>
@@ -19,10 +19,10 @@
       <thead>
         <tr>
           <th>ID</th>
-          <th>Referencja</th>
-          <th>Odbiorca</th>
-          <th>Rozmiar</th>
-          <th>Przesyłki</th>
+          <th>Reference</th>
+          <th>Recipient</th>
+          <th>Size</th>
+          <th>Shipments</th>
           <th></th>
         </tr>
       </thead>
@@ -36,7 +36,7 @@
           <td>{{ order.shipments | length }}</td>
           <td>
             <a href="/orders/{{ order.id }}" class="btn btn-sm btn-outline-primary">
-              Szczegóły
+              Details
             </a>
           </td>
         </tr>
@@ -47,12 +47,12 @@
 </div>
 {% else %}
 <div class="empty">
-  <p class="empty-title">Brak zamówień</p>
+  <p class="empty-title">No orders</p>
   <p class="empty-subtitle text-secondary">
-    Utwórz pierwsze zamówienie, aby rozpocząć.
+    Create your first order to get started.
   </p>
   <div class="empty-action">
-    <a href="/orders/new" class="btn btn-primary">Nowe zamówienie</a>
+    <a href="/orders/new" class="btn btn-primary">New order</a>
   </div>
 </div>
 {% endif %}

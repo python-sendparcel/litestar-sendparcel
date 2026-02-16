@@ -44,7 +44,7 @@ WEIGHT_BY_SIZE: dict[str, Decimal] = {
 
 # --- Template helpers ---
 def status_label(status: str) -> str:
-    """Polish label for a shipment status."""
+    """Human-readable label for a shipment status."""
     return STATUS_LABELS.get(status, status)
 
 
@@ -106,7 +106,7 @@ async def order_create(request: Request) -> Redirect:
     async with async_session() as session:
         count_result = await session.execute(select(func.count(Order.id)))
         count = count_result.scalar() or 0
-        reference = f"ZAM-{count + 1:04d}"
+        reference = f"ORD-{count + 1:04d}"
 
         order = Order(
             reference=reference,
@@ -135,7 +135,7 @@ async def order_detail(order_id: int) -> Template:
     async with async_session() as session:
         order = await session.get(Order, order_id)
         if order is None:
-            raise NotFoundException(detail="Zamówienie nie znalezione")
+            raise NotFoundException(detail="Order not found")
     default_provider = registry.get_choices()[0][0]
     return Template(
         template_name="order_detail.html",
@@ -157,7 +157,7 @@ async def order_ship(order_id: int, request: Request) -> Redirect:
     async with async_session() as session:
         order = await session.get(Order, order_id)
         if order is None:
-            raise NotFoundException(detail="Zamówienie nie znalezione")
+            raise NotFoundException(detail="Order not found")
 
         repo = ShipmentRepository(session)
         flow = ShipmentFlow(repository=repo)
@@ -174,7 +174,7 @@ async def shipment_detail(shipment_id: int) -> Template:
     async with async_session() as session:
         shipment = await session.get(Shipment, shipment_id)
         if shipment is None:
-            raise NotFoundException(detail="Przesyłka nie znaleziona")
+            raise NotFoundException(detail="Shipment not found")
     return Template(
         template_name="shipment_detail.html",
         context={

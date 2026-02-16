@@ -23,7 +23,7 @@ class DeliverySimProvider(BaseProvider):
     """Simulated delivery provider for the example app."""
 
     slug: ClassVar[str] = "delivery-sim"
-    display_name: ClassVar[str] = "Symulator Dostawy"
+    display_name: ClassVar[str] = "Delivery Simulator"
     supported_countries: ClassVar[list[str]] = ["PL"]
     supported_services: ClassVar[list[str]] = ["standard"]
     user_selectable: ClassVar[bool] = False
@@ -82,17 +82,17 @@ _NEXT_STATUSES: dict[str, list[str]] = {
     ],
 }
 
-# Polish labels for statuses
+# Human-readable status labels
 STATUS_LABELS: dict[str, str] = {
-    ShipmentStatus.NEW: "Nowa",
-    ShipmentStatus.CREATED: "Utworzona",
-    ShipmentStatus.LABEL_READY: "Etykieta gotowa",
-    ShipmentStatus.IN_TRANSIT: "W transporcie",
-    ShipmentStatus.OUT_FOR_DELIVERY: "W doręczeniu",
-    ShipmentStatus.DELIVERED: "Doręczona",
-    ShipmentStatus.CANCELLED: "Anulowana",
-    ShipmentStatus.FAILED: "Błąd",
-    ShipmentStatus.RETURNED: "Zwrócona",
+    ShipmentStatus.NEW: "New",
+    ShipmentStatus.CREATED: "Created",
+    ShipmentStatus.LABEL_READY: "Label ready",
+    ShipmentStatus.IN_TRANSIT: "In transit",
+    ShipmentStatus.OUT_FOR_DELIVERY: "Out for delivery",
+    ShipmentStatus.DELIVERED: "Delivered",
+    ShipmentStatus.CANCELLED: "Cancelled",
+    ShipmentStatus.FAILED: "Failed",
+    ShipmentStatus.RETURNED: "Returned",
 }
 
 
@@ -213,10 +213,10 @@ async def sim_label(shipment_id: str) -> Response:
     """Return a generated PDF label for a simulated shipment."""
     # Strip .pdf extension if present (URL pattern is /sim/label/{id}.pdf)
     clean_id = shipment_id.removesuffix(".pdf")
-    label_text = f"Etykieta przesylki {clean_id}"
+    label_text = f"Shipment label {clean_id}"
     pdf_bytes = _build_label_pdf(label_text)
     return Response(
-        body=pdf_bytes,
+        pdf_bytes,
         media_type="application/pdf",
         headers={
             "Content-Disposition": f'inline; filename="label-{clean_id}.pdf"'

@@ -1,15 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Przesyłka #{{ shipment.id }} — Sendparcel Demo{% endblock %}
+{% block title %}Shipment #{{ shipment.id }} — Sendparcel Demo{% endblock %}
 {% block content %}
 <div class="page-header d-print-none mb-3">
   <div class="row align-items-center">
     <div class="col">
-      <div class="page-pretitle">Przesyłka</div>
+      <div class="page-pretitle">Shipment</div>
       <h2 class="page-title">#{{ shipment.id }}</h2>
     </div>
     <div class="col-auto ms-auto">
       <a href="/orders/{{ shipment.order_id }}" class="btn btn-outline-secondary">
-        Powrót do zamówienia
+        Back to order
       </a>
     </div>
   </div>
@@ -19,7 +19,7 @@
   <div class="col-md-6">
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title">Dane przesyłki</h3>
+        <h3 class="card-title">Shipment details</h3>
       </div>
       <div class="card-body">
         <dl class="row mb-0">
@@ -30,17 +30,17 @@
               {{ status_label(shipment.status) }}
             </span>
           </dd>
-          <dt class="col-5">Dostawca:</dt>
+          <dt class="col-5">Provider:</dt>
           <dd class="col-7">{{ shipment.provider }}</dd>
-          <dt class="col-5">ID zewnętrzny:</dt>
+          <dt class="col-5">External ID:</dt>
           <dd class="col-7">{{ shipment.external_id or "—" }}</dd>
-          <dt class="col-5">Nr śledzenia:</dt>
+          <dt class="col-5">Tracking number:</dt>
           <dd class="col-7">{{ shipment.tracking_number or "—" }}</dd>
-          <dt class="col-5">Etykieta:</dt>
+          <dt class="col-5">Label:</dt>
           <dd class="col-7">
             {% if shipment.label_url %}
             <a href="{{ shipment.label_url }}" class="btn btn-sm btn-outline-primary">
-              Pobierz etykietę
+              Download label
             </a>
             {% else %}
             —
@@ -53,13 +53,13 @@
                   hx-get="/shipments/{{ shipment.id }}/refresh-status"
                   hx-target="#shipment-status"
                   hx-swap="outerHTML">
-            Odśwież status
+            Refresh status
           </button>
           {% if shipment.status in ("new", "created", "label_ready") %}
           <form method="post" action="/shipments/{{ shipment.id }}/create-label"
                 class="d-inline">
             <button type="submit" class="btn btn-sm btn-outline-success">
-              Generuj etykietę
+              Generate label
             </button>
           </form>
           {% endif %}
@@ -71,13 +71,13 @@
   <div class="col-md-6">
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title">Symulator dostawy</h3>
+        <h3 class="card-title">Delivery simulator</h3>
       </div>
       <div class="card-body" id="sim-panel"
            hx-get="/sim/panel/{{ shipment.id }}"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div class="text-secondary">Ładowanie panelu symulatora...</div>
+        <div class="text-secondary">Loading simulator panel...</div>
       </div>
     </div>
   </div>

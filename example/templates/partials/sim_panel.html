@@ -1,6 +1,6 @@
 <div id="sim-panel-inner">
   <p class="mb-2">
-    Aktualny status:
+    Current status:
     <span class="badge bg-blue">{{ current_label }}</span>
   </p>
   {% if next_options %}
@@ -16,6 +16,6 @@
     {% endfor %}
   </div>
   {% else %}
-  <p class="text-muted mb-0">Status końcowy — brak dalszych przejść.</p>
+  <p class="text-muted mb-0">Terminal status — no further transitions.</p>
   {% endif %}
 </div>

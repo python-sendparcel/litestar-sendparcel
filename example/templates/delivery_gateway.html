@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Nowe zamówienie — Sendparcel Demo{% endblock %}
+{% block title %}New order — Sendparcel Demo{% endblock %}
 {% block content %}
 <div class="page-header d-print-none mb-3">
   <div class="row align-items-center">
     <div class="col">
-      <h2 class="page-title">Nowe zamówienie</h2>
+      <h2 class="page-title">New order</h2>
       <div class="text-secondary">
-        Wypełnij dane przesyłki i wybierz dostawcę.
+        Fill in shipment details and select a provider.
       </div>
     </div>
   </div>
@@ -17,7 +17,7 @@
     <form method="post" action="/orders/create">
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label">Dostawca</label>
+          <label class="form-label">Provider</label>
           <select class="form-select" name="provider" required>
             {% for slug, name in providers %}
             <option value="{{ slug }}">{{ name }}</option>
@@ -25,75 +25,75 @@
           </select>
         </div>
         <div class="col-md-6">
-          <label class="form-label">Rozmiar paczki</label>
+          <label class="form-label">Package size</label>
           <select class="form-select" name="package_size" required>
-            <option value="S">S — mała</option>
-            <option value="M" selected>M — średnia</option>
-            <option value="L">L — duża</option>
+            <option value="S">S — small</option>
+            <option value="M" selected>M — medium</option>
+            <option value="L">L — large</option>
           </select>
         </div>
 
         <div class="col-12">
           <hr class="my-2" />
-          <h3 class="mb-3">Nadawca</h3>
+          <h3 class="mb-3">Sender</h3>
         </div>
         <div class="col-md-6">
-          <label class="form-label">Imię i nazwisko</label>
+          <label class="form-label">Full name</label>
           <input class="form-control" type="text" name="sender_name" />
         </div>
         <div class="col-md-6">
-          <label class="form-label">E-mail nadawcy</label>
+          <label class="form-label">Sender email</label>
           <input class="form-control" type="email" name="sender_email" required />
         </div>
 
         <div class="col-12">
           <hr class="my-2" />
-          <h3 class="mb-3">Odbiorca</h3>
+          <h3 class="mb-3">Recipient</h3>
         </div>
         <div class="col-md-6">
-          <label class="form-label">Imię i nazwisko</label>
+          <label class="form-label">Full name</label>
           <input class="form-control" type="text" name="recipient_name" />
         </div>
         <div class="col-md-6">
-          <label class="form-label">E-mail odbiorcy</label>
+          <label class="form-label">Recipient email</label>
           <input class="form-control" type="email" name="recipient_email" required />
         </div>
         <div class="col-md-6">
-          <label class="form-label">Telefon</label>
+          <label class="form-label">Phone</label>
           <input class="form-control" type="text" name="recipient_phone" required />
         </div>
         <div class="col-md-6">
-          <label class="form-label">Kod paczkomatu</label>
+          <label class="form-label">Parcel locker code</label>
           <input class="form-control" type="text" name="recipient_locker_code"
-                 placeholder="Opcjonalnie" />
+                 placeholder="Optional" />
         </div>
         <div class="col-md-8">
-          <label class="form-label">Adres</label>
+          <label class="form-label">Address</label>
           <input class="form-control" type="text" name="recipient_line1"
-                 placeholder="Ulica, numer" />
+                 placeholder="Street, number" />
         </div>
         <div class="col-md-4">
-          <label class="form-label">Miasto</label>
+          <label class="form-label">City</label>
           <input class="form-control" type="text" name="recipient_city" />
         </div>
         <div class="col-md-4">
-          <label class="form-label">Kod pocztowy</label>
+          <label class="form-label">Postal code</label>
           <input class="form-control" type="text" name="recipient_postal_code" />
         </div>
 
         <div class="col-12">
           <hr class="my-2" />
-          <h3 class="mb-3">Notatki</h3>
+          <h3 class="mb-3">Notes</h3>
         </div>
         <div class="col-12">
           <textarea class="form-control" name="notes" rows="2"
-                    placeholder="Opcjonalne uwagi"></textarea>
+                    placeholder="Optional remarks"></textarea>
         </div>
       </div>
 
       <div class="mt-4">
-        <button class="btn btn-primary" type="submit">Utwórz zamówienie</button>
-        <a href="/" class="btn btn-outline-secondary ms-2">Anuluj</a>
+        <button class="btn btn-primary" type="submit">Create order</button>
+        <a href="/" class="btn btn-outline-secondary ms-2">Cancel</a>
       </div>
     </form>
   </div>
