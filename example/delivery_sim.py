@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import ClassVar
 from uuid import uuid4
 
-from litestar import Router, get, post
+from litestar import Response, Router, get, post
 from litestar.response import Template
 from sendparcel.enums import ShipmentStatus
 from sendparcel.provider import BaseProvider
@@ -26,6 +26,7 @@ class DeliverySimProvider(BaseProvider):
     display_name: ClassVar[str] = "Symulator Dostawy"
     supported_countries: ClassVar[list[str]] = ["PL"]
     supported_services: ClassVar[list[str]] = ["standard"]
+    user_selectable: ClassVar[bool] = False
 
     async def create_shipment(self, **kwargs) -> ShipmentCreateResult:
         shipment_id = str(self.shipment.id)
@@ -105,6 +106,59 @@ def get_next_statuses(current: str) -> list[str]:
     return _NEXT_STATUSES.get(current, [])
 
 
+# --- PDF label generation helpers ---
+
+
+def _pdf_escape(value: str) -> str:
+    """Escape special PDF string characters."""
+    return value.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+
+
+def _build_label_pdf(text: str) -> bytes:
+    """Generate a minimal valid PDF with the given text."""
+    stream = (f"BT /F1 14 Tf 72 760 Td ({_pdf_escape(text)}) Tj ET").encode()
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        (
+            b"<< /Type /Page /Parent 2 0 R "
+            b"/MediaBox [0 0 595 842] "
+            b"/Resources << /Font << /F1 5 0 R >> >> "
+            b"/Contents 4 0 R >>"
+        ),
+        (
+            b"<< /Length "
+            + str(len(stream)).encode("ascii")
+            + b" >>\nstream\n"
+            + stream
+            + b"\nendstream"
+        ),
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    ]
+
+    pdf = bytearray(b"%PDF-1.4\n")
+    offsets: list[int] = []
+    for index, obj in enumerate(objects, start=1):
+        offsets.append(len(pdf))
+        pdf.extend(f"{index} 0 obj\n".encode("ascii"))
+        pdf.extend(obj)
+        pdf.extend(b"\nendobj\n")
+
+    xref_offset = len(pdf)
+    pdf.extend(f"xref\n0 {len(objects) + 1}\n".encode("ascii"))
+    pdf.extend(b"0000000000 65535 f \n")
+    for off in offsets:
+        pdf.extend(f"{off:010} 00000 n \n".encode("ascii"))
+    pdf.extend(
+        (
+            f"trailer\n<< /Size {len(objects) + 1} "
+            f"/Root 1 0 R >>\n"
+            f"startxref\n{xref_offset}\n%%EOF\n"
+        ).encode("ascii")
+    )
+    return bytes(pdf)
+
+
 # --- Litestar routes for the simulator control panel ---
 
 
@@ -154,7 +208,23 @@ async def sim_advance(shipment_id: int, data: dict) -> Template:
     )
 
 
+@get("/sim/label/{shipment_id:str}")
+async def sim_label(shipment_id: str) -> Response:
+    """Return a generated PDF label for a simulated shipment."""
+    # Strip .pdf extension if present (URL pattern is /sim/label/{id}.pdf)
+    clean_id = shipment_id.removesuffix(".pdf")
+    label_text = f"Etykieta przesylki {clean_id}"
+    pdf_bytes = _build_label_pdf(label_text)
+    return Response(
+        body=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'inline; filename="label-{clean_id}.pdf"'
+        },
+    )
+
+
 sim_router = Router(
     path="/",
-    route_handlers=[sim_panel, sim_advance],
+    route_handlers=[sim_panel, sim_advance, sim_label],
 )
