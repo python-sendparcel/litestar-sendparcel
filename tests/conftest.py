@@ -80,9 +80,43 @@ class OrderResolver:
 class RetryStore:
     def __init__(self) -> None:
         self.events: list[dict] = []
+        self._counter = 0
 
     async def enqueue(self, payload: dict) -> None:
         self.events.append(payload)
+
+    async def store_failed_callback(
+        self,
+        shipment_id: str,
+        provider_slug: str,
+        payload: dict,
+        headers: dict,
+    ) -> str:
+        self._counter += 1
+        retry_id = f"retry-{self._counter}"
+        self.events.append(
+            {
+                "id": retry_id,
+                "shipment_id": shipment_id,
+                "provider_slug": provider_slug,
+                "payload": payload,
+                "headers": headers,
+                "reason": "stored",
+            }
+        )
+        return retry_id
+
+    async def get_due_retries(self, limit: int = 10) -> list[dict]:
+        return []
+
+    async def mark_succeeded(self, retry_id: str) -> None:
+        pass
+
+    async def mark_failed(self, retry_id: str, error: str) -> None:
+        pass
+
+    async def mark_exhausted(self, retry_id: str) -> None:
+        pass
 
 
 @pytest.fixture(autouse=True)

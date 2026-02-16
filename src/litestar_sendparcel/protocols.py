@@ -18,4 +18,10 @@ class OrderResolver(Protocol):
 class CallbackRetryStore(Protocol):
     """Storage abstraction for failed callback retries."""
 
-    async def enqueue(self, payload: dict) -> None: ...
+    async def store_failed_callback(
+        self,
+        shipment_id: str,
+        provider_slug: str,
+        payload: dict,
+        headers: dict,
+    ) -> str: ...

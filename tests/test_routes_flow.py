@@ -2,7 +2,7 @@
 
 from litestar import Litestar
 from litestar.testing import TestClient
-from sendparcel.exceptions import InvalidCallbackError
+from sendparcel.exceptions import CommunicationError, InvalidCallbackError
 from sendparcel.provider import BaseProvider
 from sendparcel.registry import registry
 
@@ -81,9 +81,10 @@ def test_create_label_status_and_callback_flow(
         assert callback.status_code == 201
 
 
-def test_callback_error_enqueues_retry(
+def test_callback_invalid_token_returns_400(
     repository, resolver, retry_store
 ) -> None:
+    """InvalidCallbackError should NOT enqueue a retry."""
     client = _create_client(repository, resolver, retry_store)
 
     with client:
@@ -98,4 +99,90 @@ def test_callback_error_enqueues_retry(
         )
 
         assert callback.status_code == 400
+        assert len(retry_store.events) == 0
+
+
+class FailingProvider(BaseProvider):
+    """Provider that raises CommunicationError on callback."""
+
+    slug = "failing"
+    display_name = "Failing"
+
+    async def create_shipment(self, **kwargs):
+        return {"external_id": "ext-1", "tracking_number": "trk-1"}
+
+    async def create_label(self, **kwargs):
+        return {"format": "PDF", "url": "https://labels/s-1.pdf"}
+
+    async def verify_callback(
+        self, data: dict, headers: dict, **kwargs
+    ) -> None:
+        pass
+
+    async def handle_callback(
+        self, data: dict, headers: dict, **kwargs
+    ) -> None:
+        raise CommunicationError("provider unreachable")
+
+    async def fetch_shipment_status(self, **kwargs):
+        return {"status": "in_transit"}
+
+    async def cancel_shipment(self, **kwargs):
+        return True
+
+
+def _create_failing_client(repo, resolver, retry_store):
+    registry.register(FailingProvider)
+    router = create_shipping_router(
+        config=SendparcelConfig(
+            default_provider="failing",
+            providers={"failing": {}},
+        ),
+        repository=repo,
+        order_resolver=resolver,
+        retry_store=retry_store,
+    )
+    app = Litestar(route_handlers=[router])
+    return TestClient(app=app)
+
+
+def test_communication_error_enqueues_retry_and_returns_502(
+    repository, resolver, retry_store
+) -> None:
+    """CommunicationError should enqueue retry and return 502."""
+    client = _create_failing_client(repository, resolver, retry_store)
+
+    with client:
+        created = client.post("/shipments", json={"order_id": "o-1"})
+        shipment_id = created.json()["id"]
+        client.post(f"/shipments/{shipment_id}/label")
+
+        callback = client.post(
+            f"/callbacks/failing/{shipment_id}",
+            headers={"x-token": "ok"},
+            json={"event": "picked_up"},
+        )
+
+        assert callback.status_code == 502
         assert len(retry_store.events) == 1
+
+
+def test_invalid_callback_does_not_enqueue_retry(
+    repository, resolver, retry_store
+) -> None:
+    """InvalidCallbackError should NOT enqueue a retry."""
+    client = _create_client(repository, resolver, retry_store)
+
+    with client:
+        created = client.post("/shipments", json={"order_id": "o-1"})
+        shipment_id = created.json()["id"]
+        client.post(f"/shipments/{shipment_id}/label")
+
+        callback = client.post(
+            f"/callbacks/dummy/{shipment_id}",
+            headers={"x-dummy-token": "bad"},
+            json={"event": "picked_up"},
+        )
+
+        assert callback.status_code == 400
+        assert len(retry_store.events) == 0

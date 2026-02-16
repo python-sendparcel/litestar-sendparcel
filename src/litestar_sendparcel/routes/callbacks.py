@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
+import logging
+
 from litestar import Request, post
-from litestar.exceptions import HTTPException
-from sendparcel.exceptions import InvalidCallbackError
+from sendparcel.exceptions import CommunicationError, InvalidCallbackError
 from sendparcel.flow import ShipmentFlow
 from sendparcel.protocols import ShipmentRepository
 
 from litestar_sendparcel.config import SendparcelConfig
+from litestar_sendparcel.exceptions import ShipmentNotFoundError
 from litestar_sendparcel.protocols import CallbackRetryStore
 from litestar_sendparcel.retry import enqueue_callback_retry
 from litestar_sendparcel.schemas import CallbackResponse
+
+logger = logging.getLogger(__name__)
 
 
 @post("/callbacks/{provider_slug:str}/{shipment_id:str}")
@@ -25,9 +29,14 @@ async def provider_callback(
 ) -> CallbackResponse:
     """Handle provider callback using core flow and retry hooks."""
     flow = ShipmentFlow(repository=repository, config=config.providers)
-    shipment = await repository.get_by_id(shipment_id)
+
+    try:
+        shipment = await repository.get_by_id(shipment_id)
+    except KeyError as exc:
+        raise ShipmentNotFoundError(shipment_id) from exc
+
     if str(shipment.provider) != provider_slug:
-        raise HTTPException(status_code=400, detail="Provider slug mismatch")
+        raise InvalidCallbackError("Provider slug mismatch")
 
     raw_body = await request.body()
     payload = await request.json()
@@ -40,7 +49,9 @@ async def provider_callback(
             headers,
             raw_body=raw_body,
         )
-    except InvalidCallbackError as exc:
+    except InvalidCallbackError:
+        raise
+    except CommunicationError as exc:
         await enqueue_callback_retry(
             retry_store,
             provider_slug=provider_slug,
@@ -49,20 +60,7 @@ async def provider_callback(
             headers=headers,
             reason=str(exc),
         )
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except Exception as exc:
-        await enqueue_callback_retry(
-            retry_store,
-            provider_slug=provider_slug,
-            shipment_id=shipment_id,
-            payload=payload,
-            headers=headers,
-            reason=str(exc),
-        )
-        raise HTTPException(
-            status_code=502,
-            detail="Callback handling failed",
-        ) from exc
+        raise
 
     return CallbackResponse(
         provider=provider_slug,
