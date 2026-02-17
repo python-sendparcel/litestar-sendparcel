@@ -20,7 +20,7 @@ Open http://localhost:8000 in your browser.
 
 ## Features
 
-- Order management with shipment creation
+- Shipment creation with sender/receiver address and parcel data
 - Delivery simulation provider with configurable status progression
 - Label generation (PDF)
 - HTMX-powered status updates

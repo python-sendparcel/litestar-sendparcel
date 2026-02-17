@@ -5,13 +5,20 @@ from __future__ import annotations
 from litestar.testing import TestClient
 
 
+_DIRECT_PAYLOAD = {
+    "sender_address": {"country_code": "PL"},
+    "receiver_address": {"country_code": "DE"},
+    "parcels": [{"weight_kg": "1.0"}],
+}
+
+
 class TestFullShipmentFlow:
     """End-to-end tests through the Litestar HTTP layer."""
 
     def test_create_label_status_flow(self, client: TestClient) -> None:
         """Create shipment, create label, fetch status -- full happy path."""
         # Step 1: Create shipment
-        created = client.post("/shipments", json={"order_id": "int-o-1"})
+        created = client.post("/shipments", json=_DIRECT_PAYLOAD)
         assert created.status_code == 201
         shipment_id = created.json()["id"]
         assert created.json()["status"] == "created"
@@ -30,7 +37,7 @@ class TestFullShipmentFlow:
 
     def test_create_label_callback_flow(self, client: TestClient) -> None:
         """Create, label, then callback -- verify status progresses."""
-        created = client.post("/shipments", json={"order_id": "int-o-2"})
+        created = client.post("/shipments", json=_DIRECT_PAYLOAD)
         shipment_id = created.json()["id"]
 
         client.post(f"/shipments/{shipment_id}/label")
@@ -47,7 +54,7 @@ class TestFullShipmentFlow:
         self, client: TestClient, retry_store
     ) -> None:
         """Bad callback token returns 400 and does NOT enqueue retry."""
-        created = client.post("/shipments", json={"order_id": "int-o-3"})
+        created = client.post("/shipments", json=_DIRECT_PAYLOAD)
         shipment_id = created.json()["id"]
 
         resp = client.post(

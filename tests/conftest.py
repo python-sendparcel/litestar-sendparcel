@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import dataclass
-from decimal import Decimal
 
 import pytest
 from litestar import Litestar
@@ -18,28 +17,11 @@ from litestar_sendparcel.plugin import create_shipping_router
 
 
 @dataclass
-class DemoOrder:
-    id: str
-
-    def get_total_weight(self) -> Decimal:
-        return Decimal("1.0")
-
-    def get_parcels(self) -> list[dict]:
-        return [{"weight_kg": Decimal("1.0")}]
-
-    def get_sender_address(self) -> dict:
-        return {"country_code": "PL"}
-
-    def get_receiver_address(self) -> dict:
-        return {"country_code": "DE"}
-
-
-@dataclass
 class DemoShipment:
     id: str
     status: str
     provider: str
-    order_id: str = ""
+    reference_id: str = ""
     external_id: str = ""
     tracking_number: str = ""
     label_url: str = ""
@@ -58,7 +40,7 @@ class InMemoryRepo:
         shipment_id = f"s-{self._counter}"
         shipment = DemoShipment(
             id=shipment_id,
-            order_id=str(kwargs.get("order_id", "")),
+            reference_id=str(kwargs.get("reference_id", "")),
             provider=kwargs["provider"],
             status=str(kwargs["status"]),
         )
@@ -78,13 +60,10 @@ class InMemoryRepo:
             setattr(shipment, key, value)
         return shipment
 
-    async def list_by_order(self, order_id: str) -> list[DemoShipment]:
-        return [s for s in self.items.values() if s.order_id == order_id]
-
-
-class OrderResolver:
-    async def resolve(self, order_id: str) -> DemoOrder:
-        return DemoOrder(id=order_id)
+    async def list_by_reference(self, reference_id: str) -> list[DemoShipment]:
+        return [
+            s for s in self.items.values() if s.reference_id == reference_id
+        ]
 
 
 class RetryStore:
@@ -177,11 +156,6 @@ def repository() -> InMemoryRepo:
 
 
 @pytest.fixture()
-def resolver() -> OrderResolver:
-    return OrderResolver()
-
-
-@pytest.fixture()
 def retry_store() -> RetryStore:
     return RetryStore()
 
@@ -194,7 +168,6 @@ def config() -> SendparcelConfig:
 @pytest.fixture()
 def test_app(
     repository: InMemoryRepo,
-    resolver: OrderResolver,
     retry_store: RetryStore,
     config: SendparcelConfig,
 ) -> Litestar:
@@ -202,7 +175,6 @@ def test_app(
     router = create_shipping_router(
         config=config,
         repository=repository,
-        order_resolver=resolver,
         retry_store=retry_store,
     )
     return Litestar(route_handlers=[router])

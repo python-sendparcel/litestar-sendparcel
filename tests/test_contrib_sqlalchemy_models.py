@@ -33,7 +33,7 @@ async def session(engine):
 async def test_shipment_model_create(session):
     """Can create a ShipmentModel with defaults."""
     shipment = ShipmentModel(
-        order_id="order-1",
+        reference_id="ref-1",
         provider="dummy",
     )
     session.add(shipment)
@@ -51,7 +51,7 @@ async def test_shipment_model_create(session):
 async def test_shipment_model_with_all_fields(session):
     """Can create a ShipmentModel with all fields populated."""
     shipment = ShipmentModel(
-        order_id="order-2",
+        reference_id="ref-2",
         provider="inpost",
         status="label_ready",
         external_id="ext-123",

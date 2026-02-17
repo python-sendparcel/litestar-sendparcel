@@ -11,7 +11,6 @@ __all__ = [
     "ConfigurationError",
     "CreateShipmentRequest",
     "LitestarPluginRegistry",
-    "OrderResolver",
     "SendparcelConfig",
     "ShipmentNotFoundError",
     "ShipmentResponse",
@@ -26,10 +25,7 @@ if TYPE_CHECKING:
         ShipmentNotFoundError,
     )
     from litestar_sendparcel.plugin import create_shipping_router
-    from litestar_sendparcel.protocols import (
-        CallbackRetryStore,
-        OrderResolver,
-    )
+    from litestar_sendparcel.protocols import CallbackRetryStore
     from litestar_sendparcel.registry import LitestarPluginRegistry
     from litestar_sendparcel.schemas import (
         CallbackResponse,
@@ -60,7 +56,7 @@ def __getattr__(name: str):
         from litestar_sendparcel.exceptions import ConfigurationError
 
         return ConfigurationError
-    if name in ("OrderResolver", "CallbackRetryStore"):
+    if name == "CallbackRetryStore":
         from litestar_sendparcel import protocols
 
         return getattr(protocols, name)

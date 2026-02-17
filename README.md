@@ -17,7 +17,7 @@ Litestar framework adapter for [python-sendparcel](https://github.com/python-sen
 - **Provider webhooks** — callback endpoint with automatic retry and exponential backoff
 - **Plugin registry** — auto-discovers `sendparcel` provider plugins at startup
 - **SQLAlchemy contrib** — optional async SQLAlchemy 2.0 models and repository (install the `[sqlalchemy]` extra)
-- **Protocol-driven** — `OrderResolver` and `CallbackRetryStore` protocols let you plug in your own logic
+- **Protocol-driven** — `CallbackRetryStore` protocol lets you plug in your own retry logic
 - **Structured error handling** — maps core `sendparcel` exceptions to proper HTTP status codes (400, 404, 409, 502)
 - **Pydantic configuration** — `SendparcelConfig` reads from environment variables with `SENDPARCEL_` prefix
 
@@ -68,19 +68,14 @@ This gives you a fully working set of shipment and callback endpoints.
 
 ### With custom components
 
-You can plug in your own `OrderResolver` and `CallbackRetryStore`:
+You can plug in your own `CallbackRetryStore`:
 
 ```python
 from litestar_sendparcel import (
     CallbackRetryStore,
-    OrderResolver,
     create_shipping_router,
 )
 
-# Implement the protocols
-class MyOrderResolver:
-    async def resolve(self, order_id: str) -> Order:
-        ...
 
 class MyRetryStore:
     async def store_failed_callback(
@@ -105,7 +100,6 @@ class MyRetryStore:
 shipping_router = create_shipping_router(
     config=config,
     repository=repository,
-    order_resolver=MyOrderResolver(),
     retry_store=MyRetryStore(),
 )
 ```
@@ -142,12 +136,30 @@ All endpoints are mounted under the router's path (default `/`).
 
 ```json
 {
-  "order_id": "ORD-0042",
-  "provider": "inpost"
+  "reference_id": "SHP-0042",
+  "provider": "inpost",
+  "sender_address": {
+    "name": "Sender Name",
+    "line1": "10 Origin St",
+    "city": "Warsaw",
+    "postal_code": "00-001",
+    "country_code": "PL"
+  },
+  "receiver_address": {
+    "name": "Receiver Name",
+    "line1": "5 Destination St",
+    "city": "Krakow",
+    "postal_code": "30-001",
+    "country_code": "PL"
+  },
+  "parcels": [
+    {"weight_kg": 2.5}
+  ]
 }
 ```
 
 The `provider` field is optional — when omitted, `default_provider` from config is used.
+The `reference_id` field is optional — used for external reference tracking.
 
 **`ShipmentResponse`**:
 
@@ -222,7 +234,7 @@ The repository provides these async methods:
 | `create(**kwargs)` | Create a new shipment record |
 | `save(shipment)` | Merge and commit an existing shipment |
 | `update_status(shipment_id, status, **fields)` | Update status and optional extra fields |
-| `list_by_order(order_id)` | List all shipments for a given order |
+| `list_by_reference(reference_id)` | List all shipments for a given reference |
 
 ## Webhook Retry Mechanism
 
@@ -249,7 +261,7 @@ After `retry_max_attempts` failures, the retry is marked as exhausted (dead-lett
 
 A full working example is included in the `example/` directory. It demonstrates:
 
-- Order management with shipment creation
+- Shipment creation with sender/receiver address and parcel data
 - Delivery simulation provider with configurable status progression
 - Label generation (PDF)
 - HTMX-powered status updates

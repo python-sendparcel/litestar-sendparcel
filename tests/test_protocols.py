@@ -1,6 +1,6 @@
 """Tests for protocol definitions."""
 
-from litestar_sendparcel.protocols import CallbackRetryStore, OrderResolver
+from litestar_sendparcel.protocols import CallbackRetryStore
 
 
 def test_callback_retry_store_has_all_methods():
@@ -44,22 +44,3 @@ def test_callback_retry_store_is_runtime_checkable():
             pass
 
     assert isinstance(GoodStore(), CallbackRetryStore)
-
-
-def test_order_resolver_conforming_is_instance():
-    """A class with resolve() method satisfies OrderResolver."""
-
-    class ValidResolver:
-        async def resolve(self, order_id: str):
-            return None
-
-    assert isinstance(ValidResolver(), OrderResolver)
-
-
-def test_order_resolver_non_conforming_is_not_instance():
-    """A class without resolve() does not satisfy OrderResolver."""
-
-    class Invalid:
-        pass
-
-    assert not isinstance(Invalid(), OrderResolver)

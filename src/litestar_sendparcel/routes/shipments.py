@@ -15,7 +15,6 @@ from litestar_sendparcel.exceptions import (
     ConfigurationError,
     ShipmentNotFoundError,
 )
-from litestar_sendparcel.protocols import OrderResolver
 from litestar_sendparcel.schemas import CreateShipmentRequest, ShipmentResponse
 
 logger = logging.getLogger(__name__)
@@ -40,29 +39,16 @@ class ShipmentController(Controller):
         repository: Annotated[
             ShipmentRepository, Dependency(skip_validation=True)
         ],
-        order_resolver: Annotated[
-            OrderResolver | None, Dependency(skip_validation=True)
-        ] = None,
     ) -> ShipmentResponse:
         """Create a shipment via ShipmentFlow.
 
-        Supports two flows:
-        - **Order-based**: provide ``order_id`` — the order is resolved and
-          ``create_shipment_from_order`` is called.
-        - **Direct**: provide ``sender_address``, ``receiver_address`` and
-          ``parcels`` — ``create_shipment`` is called directly.
+        Requires ``sender_address``, ``receiver_address``, and ``parcels``.
+        Optionally accepts ``reference_id`` for external reference tracking.
         """
         provider_slug = data.provider or config.default_provider
         flow = ShipmentFlow(repository=repository, config=config.providers)
 
-        if data.order_id is not None:
-            if order_resolver is None:
-                raise ConfigurationError("Order resolver not configured")
-            order = await order_resolver.resolve(data.order_id)
-            shipment = await flow.create_shipment_from_order(
-                order, provider_slug
-            )
-        elif (
+        if (
             data.sender_address is not None
             and data.receiver_address is not None
             and data.parcels is not None
@@ -75,8 +61,7 @@ class ShipmentController(Controller):
             )
         else:
             raise ConfigurationError(
-                "Provide either 'order_id' or "
-                "'sender_address', 'receiver_address' and 'parcels'"
+                "Provide 'sender_address', 'receiver_address', and 'parcels'"
             )
 
         return ShipmentResponse.from_shipment(shipment)

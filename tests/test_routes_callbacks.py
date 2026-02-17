@@ -5,12 +5,19 @@ from __future__ import annotations
 from litestar.testing import TestClient
 
 
+_DIRECT_PAYLOAD = {
+    "sender_address": {"country_code": "PL"},
+    "receiver_address": {"country_code": "DE"},
+    "parcels": [{"weight_kg": "1.0"}],
+}
+
+
 class TestCallbackRoute:
     """Test POST /callbacks/{provider_slug}/{shipment_id}."""
 
     def _create_shipment(self, client: TestClient) -> str:
         """Helper: create a shipment and return its ID."""
-        resp = client.post("/shipments", json={"order_id": "order-1"})
+        resp = client.post("/shipments", json=_DIRECT_PAYLOAD)
         assert resp.status_code == 201, resp.text
         return resp.json()["id"]
 

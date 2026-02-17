@@ -47,7 +47,6 @@ router = create_shipping_router(
     config=config,
     repository=my_repository,
     registry=my_registry,           # optional
-    order_resolver=my_resolver,     # optional
     retry_store=my_retry_store,     # optional
 )
 ```
@@ -62,9 +61,6 @@ router = create_shipping_router(
 
 `registry`
 : **Optional.** `LitestarPluginRegistry` instance. If not provided, a new one is created and `discover()` is called to load providers from entry points.
-
-`order_resolver`
-: **Optional.** Object implementing `litestar_sendparcel.protocols.OrderResolver`. Required for the `POST /shipments` endpoint to resolve order IDs to `Order` objects.
 
 `retry_store`
 : **Optional.** Object implementing `litestar_sendparcel.protocols.CallbackRetryStore`. When provided, failed callback payloads are persisted for later retry.
@@ -101,15 +97,6 @@ Each provider class receives its config section as a dict. The built-in `DummyPr
 | `cancel_success` | `bool` | `True` | Whether cancellation succeeds |
 
 ## Protocols
-
-### `OrderResolver`
-
-```python
-class OrderResolver(Protocol):
-    async def resolve(self, order_id: str) -> Order: ...
-```
-
-Maps string order IDs to `sendparcel.protocols.Order` instances.
 
 ### `CallbackRetryStore`
 

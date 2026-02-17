@@ -35,12 +35,12 @@ def repo(session_factory):
 async def test_create_shipment(repo):
     """Repository creates a shipment."""
     shipment = await repo.create(
-        order_id="order-1",
+        reference_id="ref-1",
         provider="dummy",
         status="new",
     )
     assert shipment.id is not None
-    assert shipment.order_id == "order-1"
+    assert shipment.reference_id == "ref-1"
     assert shipment.status == "new"
     assert shipment.provider == "dummy"
 
@@ -48,13 +48,13 @@ async def test_create_shipment(repo):
 async def test_get_by_id(repo):
     """Repository retrieves a shipment by ID."""
     created = await repo.create(
-        order_id="order-1",
+        reference_id="ref-1",
         provider="dummy",
         status="new",
     )
     fetched = await repo.get_by_id(created.id)
     assert fetched.id == created.id
-    assert fetched.order_id == "order-1"
+    assert fetched.reference_id == "ref-1"
 
 
 async def test_get_by_id_not_found(repo):
@@ -66,7 +66,7 @@ async def test_get_by_id_not_found(repo):
 async def test_save_shipment(repo):
     """Repository saves updated shipment fields."""
     shipment = await repo.create(
-        order_id="order-1",
+        reference_id="ref-1",
         provider="dummy",
         status="new",
     )
@@ -81,7 +81,7 @@ async def test_save_shipment(repo):
 async def test_update_status(repo):
     """Repository updates shipment status."""
     shipment = await repo.create(
-        order_id="order-1",
+        reference_id="ref-1",
         provider="dummy",
         status="new",
     )
@@ -92,30 +92,30 @@ async def test_update_status(repo):
     assert updated.external_id == "ext-456"
 
 
-async def test_list_by_order(repo):
-    """Repository lists shipments for an order."""
+async def test_list_by_reference(repo):
+    """Repository lists shipments for a reference."""
     await repo.create(
-        order_id="order-1",
+        reference_id="ref-1",
         provider="dummy",
         status="new",
     )
     await repo.create(
-        order_id="order-1",
+        reference_id="ref-1",
         provider="inpost",
         status="new",
     )
     await repo.create(
-        order_id="order-2",
+        reference_id="ref-2",
         provider="dummy",
         status="new",
     )
 
-    shipments = await repo.list_by_order("order-1")
+    shipments = await repo.list_by_reference("ref-1")
     assert len(shipments) == 2
-    assert all(s.order_id == "order-1" for s in shipments)
+    assert all(s.reference_id == "ref-1" for s in shipments)
 
 
-async def test_list_by_order_empty(repo):
-    """Empty list when no shipments for order."""
-    shipments = await repo.list_by_order("nonexistent")
+async def test_list_by_reference_empty(repo):
+    """Empty list when no shipments for reference."""
+    shipments = await repo.list_by_reference("nonexistent")
     assert shipments == []

@@ -16,24 +16,24 @@ from litestar_sendparcel.schemas import (
 
 class TestCreateShipmentRequest:
     def test_empty_request_is_valid(self) -> None:
-        """All fields are optional — empty request is accepted."""
+        """All fields are optional -- empty request is accepted."""
         req = CreateShipmentRequest()
-        assert req.order_id is None
+        assert req.reference_id is None
         assert req.provider is None
         assert req.sender_address is None
         assert req.receiver_address is None
         assert req.parcels is None
 
-    def test_order_id_accepted(self) -> None:
-        req = CreateShipmentRequest(order_id="o-1")
-        assert req.order_id == "o-1"
+    def test_reference_id_accepted(self) -> None:
+        req = CreateShipmentRequest(reference_id="ref-1")
+        assert req.reference_id == "ref-1"
 
     def test_provider_defaults_to_none(self) -> None:
-        req = CreateShipmentRequest(order_id="o-1")
+        req = CreateShipmentRequest(reference_id="ref-1")
         assert req.provider is None
 
     def test_provider_accepted(self) -> None:
-        req = CreateShipmentRequest(order_id="o-1", provider="inpost")
+        req = CreateShipmentRequest(reference_id="ref-1", provider="inpost")
         assert req.provider == "inpost"
 
     def test_direct_fields_accepted(self) -> None:

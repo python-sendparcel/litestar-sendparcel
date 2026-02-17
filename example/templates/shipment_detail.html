@@ -8,8 +8,8 @@
       <h2 class="page-title">#{{ shipment.id }}</h2>
     </div>
     <div class="col-auto ms-auto">
-      <a href="/orders/{{ shipment.order_id }}" class="btn btn-outline-secondary">
-        Back to order
+      <a href="/" class="btn btn-outline-secondary">
+        Back to shipments
       </a>
     </div>
   </div>
@@ -23,6 +23,8 @@
       </div>
       <div class="card-body">
         <dl class="row mb-0">
+          <dt class="col-5">Reference:</dt>
+          <dd class="col-7">{{ shipment.reference_id or "—" }}</dd>
           <dt class="col-5">Status:</dt>
           <dd class="col-7">
             <span id="shipment-status"

@@ -4,15 +4,15 @@
 <div class="page-header d-print-none mb-3">
   <div class="row align-items-center">
     <div class="col-auto">
-      <h2 class="page-title">Orders</h2>
+      <h2 class="page-title">Shipments</h2>
     </div>
     <div class="col-auto ms-auto">
-      <a href="/orders/new" class="btn btn-primary">New order</a>
+      <a href="/shipments/new" class="btn btn-primary">New shipment</a>
     </div>
   </div>
 </div>
 
-{% if orders %}
+{% if shipments %}
 <div class="card">
   <div class="table-responsive">
     <table class="table table-vcenter card-table">
@@ -20,22 +20,26 @@
         <tr>
           <th>ID</th>
           <th>Reference</th>
-          <th>Recipient</th>
-          <th>Size</th>
-          <th>Shipments</th>
+          <th>Provider</th>
+          <th>Receiver</th>
+          <th>Status</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
-        {% for order in orders %}
+        {% for shipment in shipments %}
         <tr>
-          <td>{{ order.id }}</td>
-          <td>{{ order.reference }}</td>
-          <td>{{ order.recipient_name or order.recipient_email }}</td>
-          <td>{{ order.package_size }}</td>
-          <td>{{ order.shipments | length }}</td>
+          <td>{{ shipment.id }}</td>
+          <td>{{ shipment.reference_id or "—" }}</td>
+          <td>{{ shipment.provider }}</td>
+          <td>{{ shipment.receiver_name or "—" }}</td>
           <td>
-            <a href="/orders/{{ order.id }}" class="btn btn-sm btn-outline-primary">
+            <span class="badge bg-{{ status_color(shipment.status) }}">
+              {{ status_label(shipment.status) }}
+            </span>
+          </td>
+          <td>
+            <a href="/shipments/{{ shipment.id }}" class="btn btn-sm btn-outline-primary">
               Details
             </a>
           </td>
@@ -47,12 +51,12 @@
 </div>
 {% else %}
 <div class="empty">
-  <p class="empty-title">No orders</p>
+  <p class="empty-title">No shipments</p>
   <p class="empty-subtitle text-secondary">
-    Create your first order to get started.
+    Create your first shipment to get started.
   </p>
   <div class="empty-action">
-    <a href="/orders/new" class="btn btn-primary">New order</a>
+    <a href="/shipments/new" class="btn btn-primary">New shipment</a>
   </div>
 </div>
 {% endif %}

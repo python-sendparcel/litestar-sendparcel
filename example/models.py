@@ -1,11 +1,11 @@
-"""SQLAlchemy models implementing sendparcel core protocols."""
+"""SQLAlchemy models for the example app."""
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from decimal import Decimal
 
-from sendparcel.types import AddressInfo, ParcelInfo
-from sqlalchemy import ForeignKey, Numeric, String, Text
+from sqlalchemy import DateTime, Numeric, String
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -15,7 +15,6 @@ from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
     mapped_column,
-    relationship,
 )
 
 
@@ -23,76 +22,58 @@ class Base(DeclarativeBase):
     pass
 
 
-class Order(Base):
-    """Order model implementing sendparcel Order protocol."""
-
-    __tablename__ = "orders"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    reference: Mapped[str] = mapped_column(String(100), unique=True)
-
-    sender_email: Mapped[str] = mapped_column(String(255))
-    sender_name: Mapped[str] = mapped_column(String(255), default="")
-    sender_country_code: Mapped[str] = mapped_column(String(2), default="PL")
-
-    recipient_email: Mapped[str] = mapped_column(String(255))
-    recipient_phone: Mapped[str] = mapped_column(String(50))
-    recipient_name: Mapped[str] = mapped_column(String(255), default="")
-    recipient_line1: Mapped[str] = mapped_column(String(500), default="")
-    recipient_city: Mapped[str] = mapped_column(String(255), default="")
-    recipient_postal_code: Mapped[str] = mapped_column(String(20), default="")
-    recipient_country_code: Mapped[str] = mapped_column(String(2), default="PL")
-    recipient_locker_code: Mapped[str] = mapped_column(String(50), default="")
-
-    package_size: Mapped[str] = mapped_column(String(5), default="M")
-    weight_kg: Mapped[Decimal] = mapped_column(
-        Numeric(6, 2), default=Decimal("1.0")
-    )
-    notes: Mapped[str] = mapped_column(Text, default="")
-
-    shipments: Mapped[list[Shipment]] = relationship(
-        back_populates="order", lazy="selectin"
-    )
-
-    def get_total_weight(self) -> Decimal:
-        return self.weight_kg
-
-    def get_parcels(self) -> list[ParcelInfo]:
-        return [ParcelInfo(weight_kg=self.weight_kg)]
-
-    def get_sender_address(self) -> AddressInfo:
-        return AddressInfo(
-            name=self.sender_name,
-            email=self.sender_email,
-            country_code=self.sender_country_code,
-        )
-
-    def get_receiver_address(self) -> AddressInfo:
-        return AddressInfo(
-            name=self.recipient_name,
-            email=self.recipient_email,
-            phone=self.recipient_phone,
-            line1=self.recipient_line1,
-            city=self.recipient_city,
-            postal_code=self.recipient_postal_code,
-            country_code=self.recipient_country_code,
-        )
-
-
 class Shipment(Base):
-    """Shipment model implementing sendparcel Shipment protocol."""
+    """Shipment model with inline address and parcel data."""
 
     __tablename__ = "shipments"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"))
-    status: Mapped[str] = mapped_column(String(50), default="new")
+    reference_id: Mapped[str] = mapped_column(String(100), default="")
+
+    # Sender address
+    sender_name: Mapped[str] = mapped_column(String(255), default="")
+    sender_street: Mapped[str] = mapped_column(String(500), default="")
+    sender_city: Mapped[str] = mapped_column(String(255), default="")
+    sender_postal_code: Mapped[str] = mapped_column(String(20), default="")
+    sender_country_code: Mapped[str] = mapped_column(String(2), default="PL")
+
+    # Receiver address
+    receiver_name: Mapped[str] = mapped_column(String(255), default="")
+    receiver_street: Mapped[str] = mapped_column(String(500), default="")
+    receiver_city: Mapped[str] = mapped_column(String(255), default="")
+    receiver_postal_code: Mapped[str] = mapped_column(String(20), default="")
+    receiver_country_code: Mapped[str] = mapped_column(String(2), default="PL")
+
+    # Parcel dimensions
+    weight: Mapped[Decimal] = mapped_column(
+        Numeric(6, 2), default=Decimal("1.0")
+    )
+    width: Mapped[Decimal] = mapped_column(
+        Numeric(6, 2), default=Decimal("0.0")
+    )
+    height: Mapped[Decimal] = mapped_column(
+        Numeric(6, 2), default=Decimal("0.0")
+    )
+    length: Mapped[Decimal] = mapped_column(
+        Numeric(6, 2), default=Decimal("0.0")
+    )
+
+    # Shipment tracking
     provider: Mapped[str] = mapped_column(String(100), default="")
-    external_id: Mapped[str] = mapped_column(String(255), default="")
     tracking_number: Mapped[str] = mapped_column(String(255), default="")
+    status: Mapped[str] = mapped_column(String(50), default="new")
+    external_id: Mapped[str] = mapped_column(String(255), default="")
     label_url: Mapped[str] = mapped_column(String(500), default="")
 
-    order: Mapped[Order] = relationship(back_populates="shipments")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(tz=UTC),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(tz=UTC),
+        onupdate=lambda: datetime.now(tz=UTC),
+    )
 
 
 class ShipmentRepository:
@@ -108,13 +89,8 @@ class ShipmentRepository:
         return result
 
     async def create(self, **kwargs) -> Shipment:
-        order_id = kwargs.pop("order_id", None)
-        # Support legacy callers that pass an ``order`` object.
-        order = kwargs.pop("order", None)
-        if order_id is None and order is not None:
-            order_id = getattr(order, "id", order)
         shipment = Shipment(
-            order_id=order_id,
+            reference_id=str(kwargs.get("reference_id", "")),
             status=str(kwargs.get("status", "new")),
             provider=str(kwargs.get("provider", "")),
             external_id=str(kwargs.get("external_id", "")),

@@ -52,7 +52,6 @@ def test_lazy_import_exceptions():
 
 def test_lazy_import_protocols():
     """Protocol classes are lazily importable."""
-    assert litestar_sendparcel.OrderResolver is not None
     assert litestar_sendparcel.CallbackRetryStore is not None
 
 

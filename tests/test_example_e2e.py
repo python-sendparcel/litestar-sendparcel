@@ -11,6 +11,7 @@ from litestar import Litestar
 from litestar.testing import TestClient
 from sendparcel.flow import ShipmentFlow
 from sendparcel.registry import registry as core_registry
+from sendparcel.types import AddressInfo, ParcelInfo
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -28,7 +29,25 @@ from delivery_sim import (  # noqa: E402
     _sim_state,
     sim_label,
 )
-from models import Base, Order, ShipmentRepository  # noqa: E402
+from models import Base, Shipment, ShipmentRepository  # noqa: E402
+
+SENDER = AddressInfo(
+    name="Test Sender",
+    line1="10 Origin St",
+    city="Warsaw",
+    postal_code="00-001",
+    country_code="PL",
+)
+RECEIVER = AddressInfo(
+    name="Test Recipient",
+    email="recipient@test.example",
+    phone="+48123456789",
+    line1="5 Destination St",
+    city="Krakow",
+    postal_code="30-001",
+    country_code="PL",
+)
+PARCELS = [ParcelInfo(weight_kg=Decimal("2.5"))]
 
 
 @pytest.fixture()
@@ -58,43 +77,24 @@ def _register_sim_provider():
     _sim_state.clear()
 
 
-def _make_order(**overrides) -> Order:
-    """Build an Order with sensible defaults (not yet persisted)."""
-    defaults = {
-        "reference": "TEST-001",
-        "sender_name": "Test Sender",
-        "sender_email": "sender@test.example",
-        "recipient_name": "Test Recipient",
-        "recipient_email": "recipient@test.example",
-        "recipient_phone": "+48123456789",
-        "recipient_line1": "5 Destination St",
-        "recipient_city": "Krakow",
-        "recipient_postal_code": "30-001",
-        "package_size": "M",
-        "weight_kg": Decimal("2.5"),
-    }
-    defaults.update(overrides)
-    return Order(**defaults)
-
-
 class TestFullParcelDispatchFlow:
-    """E2E: order creation -> shipment -> label -> PDF verification."""
+    """E2E: shipment creation -> label -> PDF verification."""
 
     async def test_create_shipment_and_download_label(
         self, db_session: AsyncSession
     ):
-        """Full flow: create order, create shipment, generate label,
-        verify PDF bytes."""
-        order = _make_order()
-        db_session.add(order)
-        await db_session.flush()
-        assert order.id is not None
-
+        """Full flow: create shipment, generate label, verify PDF bytes."""
         repo = ShipmentRepository(db_session)
         flow = ShipmentFlow(repository=repo)
 
         # Create shipment via provider
-        shipment = await flow.create_shipment_from_order(order, "delivery-sim")
+        shipment = await flow.create_shipment(
+            "delivery-sim",
+            sender_address=SENDER,
+            receiver_address=RECEIVER,
+            parcels=PARCELS,
+            reference_id="SHP-0001",
+        )
         assert shipment.provider == "delivery-sim"
         assert shipment.external_id.startswith("sim-")
         assert "SIM-" in shipment.tracking_number
@@ -118,47 +118,57 @@ class TestFullParcelDispatchFlow:
         self, db_session: AsyncSession
     ):
         """Shipment created via flow is retrievable from the database."""
-        order = _make_order(reference="TEST-002")
-        db_session.add(order)
-        await db_session.flush()
-
         repo = ShipmentRepository(db_session)
         flow = ShipmentFlow(repository=repo)
 
-        shipment = await flow.create_shipment_from_order(order, "delivery-sim")
+        shipment = await flow.create_shipment(
+            "delivery-sim",
+            sender_address=SENDER,
+            receiver_address=RECEIVER,
+            parcels=PARCELS,
+            reference_id="SHP-0002",
+        )
         retrieved = await repo.get_by_id(str(shipment.id))
         assert retrieved is not None
         assert retrieved.provider == "delivery-sim"
         assert retrieved.external_id == shipment.external_id
         assert retrieved.tracking_number == shipment.tracking_number
 
-    async def test_multiple_shipments_for_same_order(
-        self, db_session: AsyncSession
-    ):
-        """An order can have multiple shipments (e.g. re-ship)."""
-        order = _make_order(reference="TEST-003")
-        db_session.add(order)
-        await db_session.flush()
-
+    async def test_multiple_shipments(self, db_session: AsyncSession):
+        """Multiple shipments can be created independently."""
         repo = ShipmentRepository(db_session)
         flow = ShipmentFlow(repository=repo)
 
-        s1 = await flow.create_shipment_from_order(order, "delivery-sim")
-        s2 = await flow.create_shipment_from_order(order, "delivery-sim")
+        s1 = await flow.create_shipment(
+            "delivery-sim",
+            sender_address=SENDER,
+            receiver_address=RECEIVER,
+            parcels=PARCELS,
+            reference_id="SHP-0003",
+        )
+        s2 = await flow.create_shipment(
+            "delivery-sim",
+            sender_address=SENDER,
+            receiver_address=RECEIVER,
+            parcels=PARCELS,
+            reference_id="SHP-0004",
+        )
         assert s1.id != s2.id
         assert s1.external_id != s2.external_id
         assert s1.tracking_number != s2.tracking_number
 
     async def test_sim_state_tracks_shipment(self, db_session: AsyncSession):
         """DeliverySimProvider records shipment status in _sim_state."""
-        order = _make_order(reference="TEST-004")
-        db_session.add(order)
-        await db_session.flush()
-
         repo = ShipmentRepository(db_session)
         flow = ShipmentFlow(repository=repo)
 
-        shipment = await flow.create_shipment_from_order(order, "delivery-sim")
+        shipment = await flow.create_shipment(
+            "delivery-sim",
+            sender_address=SENDER,
+            receiver_address=RECEIVER,
+            parcels=PARCELS,
+            reference_id="SHP-0005",
+        )
         sid = str(shipment.id)
         assert sid in _sim_state
         assert _sim_state[sid] == "created"

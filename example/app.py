@@ -18,7 +18,6 @@ from litestar.exceptions import NotFoundException
 from litestar.response import Redirect, Template
 from litestar.template import TemplateConfig
 from models import (
-    Order,
     Shipment,
     ShipmentRepository,
     async_session,
@@ -27,6 +26,7 @@ from models import (
 from sendparcel.enums import ShipmentStatus
 from sendparcel.flow import ShipmentFlow
 from sendparcel.registry import registry
+from sendparcel.types import AddressInfo, ParcelInfo
 from sqlalchemy import func, select
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -76,19 +76,25 @@ async def lifespan(app: Litestar) -> AsyncGenerator[None, None]:
 
 @get("/")
 async def home() -> Template:
-    """Render order list."""
+    """Render shipment list."""
     async with async_session() as session:
-        result = await session.execute(select(Order).order_by(Order.id.desc()))
-        orders = result.scalars().all()
+        result = await session.execute(
+            select(Shipment).order_by(Shipment.id.desc())
+        )
+        shipments = result.scalars().all()
     return Template(
         template_name="home.html",
-        context={"orders": orders},
+        context={
+            "shipments": shipments,
+            "status_label": status_label,
+            "status_color": status_color,
+        },
     )
 
 
-@get("/orders/new")
-async def order_new() -> Template:
-    """Render new order form."""
+@get("/shipments/new")
+async def shipment_new() -> Template:
+    """Render new shipment form."""
     providers = registry.get_choices()
     return Template(
         template_name="delivery_gateway.html",
@@ -96,72 +102,60 @@ async def order_new() -> Template:
     )
 
 
-@post("/orders/create")
-async def order_create(request: Request) -> Redirect:
-    """Create a new order from form submission."""
+@post("/shipments/create")
+async def shipment_create(request: Request) -> Redirect:
+    """Create a new shipment from form submission."""
     form = await request.form()
     package_size = str(form.get("package_size", "M"))
     weight = WEIGHT_BY_SIZE.get(package_size, Decimal("1.0"))
-
-    async with async_session() as session:
-        count_result = await session.execute(select(func.count(Order.id)))
-        count = count_result.scalar() or 0
-        reference = f"ORD-{count + 1:04d}"
-
-        order = Order(
-            reference=reference,
-            sender_email=str(form.get("sender_email", "")),
-            sender_name=str(form.get("sender_name", "")),
-            recipient_email=str(form.get("recipient_email", "")),
-            recipient_phone=str(form.get("recipient_phone", "")),
-            recipient_name=str(form.get("recipient_name", "")),
-            recipient_line1=str(form.get("recipient_line1", "")),
-            recipient_city=str(form.get("recipient_city", "")),
-            recipient_postal_code=str(form.get("recipient_postal_code", "")),
-            recipient_country_code="PL",
-            recipient_locker_code=str(form.get("recipient_locker_code", "")),
-            package_size=package_size,
-            weight_kg=weight,
-            notes=str(form.get("notes", "")),
-        )
-        session.add(order)
-        await session.commit()
-        return Redirect(path=f"/orders/{order.id}")
-
-
-@get("/orders/{order_id:int}")
-async def order_detail(order_id: int) -> Template:
-    """Render order detail page."""
-    async with async_session() as session:
-        order = await session.get(Order, order_id)
-        if order is None:
-            raise NotFoundException(detail="Order not found")
-    default_provider = registry.get_choices()[0][0]
-    return Template(
-        template_name="order_detail.html",
-        context={
-            "order": order,
-            "default_provider": default_provider,
-            "status_label": status_label,
-            "status_color": status_color,
-        },
-    )
-
-
-@post("/orders/{order_id:int}/ship")
-async def order_ship(order_id: int, request: Request) -> Redirect:
-    """Create a shipment for an order using sendparcel flow."""
-    form = await request.form()
     provider_slug = str(form.get("provider", registry.get_choices()[0][0]))
 
+    sender_address = AddressInfo(
+        name=str(form.get("sender_name", "")),
+        line1=str(form.get("sender_line1", "")),
+        city=str(form.get("sender_city", "")),
+        postal_code=str(form.get("sender_postal_code", "")),
+        country_code="PL",
+    )
+    receiver_address = AddressInfo(
+        name=str(form.get("recipient_name", "")),
+        email=str(form.get("recipient_email", "")),
+        phone=str(form.get("recipient_phone", "")),
+        line1=str(form.get("recipient_line1", "")),
+        city=str(form.get("recipient_city", "")),
+        postal_code=str(form.get("recipient_postal_code", "")),
+        country_code="PL",
+    )
+    parcels = [ParcelInfo(weight_kg=weight)]
+
     async with async_session() as session:
-        order = await session.get(Order, order_id)
-        if order is None:
-            raise NotFoundException(detail="Order not found")
+        count_result = await session.execute(select(func.count(Shipment.id)))
+        count = count_result.scalar() or 0
+        reference_id = f"SHP-{count + 1:04d}"
 
         repo = ShipmentRepository(session)
         flow = ShipmentFlow(repository=repo)
-        shipment = await flow.create_shipment_from_order(order, provider_slug)
+        shipment = await flow.create_shipment(
+            provider_slug,
+            sender_address=sender_address,
+            receiver_address=receiver_address,
+            parcels=parcels,
+            reference_id=reference_id,
+        )
+
+        # Store address and parcel data on the example model
+        shipment.sender_name = str(form.get("sender_name", ""))
+        shipment.sender_street = str(form.get("sender_line1", ""))
+        shipment.sender_city = str(form.get("sender_city", ""))
+        shipment.sender_postal_code = str(form.get("sender_postal_code", ""))
+        shipment.receiver_name = str(form.get("recipient_name", ""))
+        shipment.receiver_street = str(form.get("recipient_line1", ""))
+        shipment.receiver_city = str(form.get("recipient_city", ""))
+        shipment.receiver_postal_code = str(
+            form.get("recipient_postal_code", "")
+        )
+        shipment.weight = weight
+
         with suppress(NotImplementedError):
             shipment = await flow.create_label(shipment)
         await session.commit()
@@ -223,10 +217,8 @@ async def shipment_refresh_status(shipment_id: int) -> Template:
 app = Litestar(
     route_handlers=[
         home,
-        order_new,
-        order_create,
-        order_detail,
-        order_ship,
+        shipment_new,
+        shipment_create,
         shipment_detail,
         shipment_create_label,
         shipment_refresh_status,

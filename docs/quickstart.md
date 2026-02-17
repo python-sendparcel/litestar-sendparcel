@@ -101,28 +101,13 @@ This gives you the following API endpoints:
 ```bash
 curl -X POST http://localhost:8000/shipments \
   -H "Content-Type: application/json" \
-  -d '{"order_id": "order-001", "provider": "dummy"}'
-```
-
-## Order resolver
-
-To use the `POST /shipments` endpoint, you must provide an `OrderResolver` — an async callable that maps `order_id` strings to objects implementing the `Order` protocol:
-
-```python
-from litestar_sendparcel.protocols import OrderResolver
-
-
-class MyOrderResolver:
-    async def resolve(self, order_id: str):
-        # Load order from your database
-        ...
-
-
-shipping_router = create_shipping_router(
-    config=config,
-    repository=MyShipmentRepository(),
-    order_resolver=MyOrderResolver(),
-)
+  -d '{
+    "reference_id": "SHP-001",
+    "provider": "dummy",
+    "sender_address": {"name": "Sender", "city": "Warsaw", "country_code": "PL"},
+    "receiver_address": {"name": "Receiver", "city": "Krakow", "country_code": "PL"},
+    "parcels": [{"weight_kg": 1.5}]
+  }'
 ```
 
 ## Next steps

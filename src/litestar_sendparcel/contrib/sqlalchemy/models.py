@@ -21,7 +21,9 @@ class ShipmentModel(Base):
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
     )
-    order_id: Mapped[str] = mapped_column(String(255), index=True)
+    reference_id: Mapped[str] = mapped_column(
+        String(255), index=True, default=""
+    )
     status: Mapped[str] = mapped_column(String(32), default="new")
     provider: Mapped[str] = mapped_column(String(64))
     external_id: Mapped[str] = mapped_column(String(128), default="")
