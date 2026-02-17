@@ -65,3 +65,14 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "N", "UP", "B", "A", "SIM", "RUF"]
 ignore = ["N818", "B027"]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
