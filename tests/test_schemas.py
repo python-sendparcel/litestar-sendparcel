@@ -15,9 +15,18 @@ from litestar_sendparcel.schemas import (
 
 
 class TestCreateShipmentRequest:
-    def test_order_id_required(self) -> None:
-        with pytest.raises(ValidationError):
-            CreateShipmentRequest()
+    def test_empty_request_is_valid(self) -> None:
+        """All fields are optional — empty request is accepted."""
+        req = CreateShipmentRequest()
+        assert req.order_id is None
+        assert req.provider is None
+        assert req.sender_address is None
+        assert req.receiver_address is None
+        assert req.parcels is None
+
+    def test_order_id_accepted(self) -> None:
+        req = CreateShipmentRequest(order_id="o-1")
+        assert req.order_id == "o-1"
 
     def test_provider_defaults_to_none(self) -> None:
         req = CreateShipmentRequest(order_id="o-1")
@@ -26,6 +35,16 @@ class TestCreateShipmentRequest:
     def test_provider_accepted(self) -> None:
         req = CreateShipmentRequest(order_id="o-1", provider="inpost")
         assert req.provider == "inpost"
+
+    def test_direct_fields_accepted(self) -> None:
+        req = CreateShipmentRequest(
+            sender_address={"country_code": "PL"},
+            receiver_address={"country_code": "DE"},
+            parcels=[{"weight_kg": 1.0}],
+        )
+        assert req.sender_address == {"country_code": "PL"}
+        assert req.receiver_address == {"country_code": "DE"}
+        assert req.parcels == [{"weight_kg": 1.0}]
 
 
 class TestShipmentResponse:

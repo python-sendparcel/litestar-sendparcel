@@ -44,14 +44,41 @@ class ShipmentController(Controller):
             OrderResolver | None, Dependency(skip_validation=True)
         ] = None,
     ) -> ShipmentResponse:
-        """Create a shipment via ShipmentFlow."""
-        if order_resolver is None:
-            raise ConfigurationError("Order resolver not configured")
+        """Create a shipment via ShipmentFlow.
 
+        Supports two flows:
+        - **Order-based**: provide ``order_id`` — the order is resolved and
+          ``create_shipment_from_order`` is called.
+        - **Direct**: provide ``sender_address``, ``receiver_address`` and
+          ``parcels`` — ``create_shipment`` is called directly.
+        """
         provider_slug = data.provider or config.default_provider
-        order = await order_resolver.resolve(data.order_id)
         flow = ShipmentFlow(repository=repository, config=config.providers)
-        shipment = await flow.create_shipment(order, provider_slug)
+
+        if data.order_id is not None:
+            if order_resolver is None:
+                raise ConfigurationError("Order resolver not configured")
+            order = await order_resolver.resolve(data.order_id)
+            shipment = await flow.create_shipment_from_order(
+                order, provider_slug
+            )
+        elif (
+            data.sender_address is not None
+            and data.receiver_address is not None
+            and data.parcels is not None
+        ):
+            shipment = await flow.create_shipment(
+                provider_slug,
+                sender_address=data.sender_address,
+                receiver_address=data.receiver_address,
+                parcels=data.parcels,
+            )
+        else:
+            raise ConfigurationError(
+                "Provide either 'order_id' or "
+                "'sender_address', 'receiver_address' and 'parcels'"
+            )
+
         return ShipmentResponse.from_shipment(shipment)
 
     @post("/{shipment_id:str}/label")

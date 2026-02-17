@@ -94,7 +94,7 @@ class TestFullParcelDispatchFlow:
         flow = ShipmentFlow(repository=repo)
 
         # Create shipment via provider
-        shipment = await flow.create_shipment(order, "delivery-sim")
+        shipment = await flow.create_shipment_from_order(order, "delivery-sim")
         assert shipment.provider == "delivery-sim"
         assert shipment.external_id.startswith("sim-")
         assert "SIM-" in shipment.tracking_number
@@ -125,7 +125,7 @@ class TestFullParcelDispatchFlow:
         repo = ShipmentRepository(db_session)
         flow = ShipmentFlow(repository=repo)
 
-        shipment = await flow.create_shipment(order, "delivery-sim")
+        shipment = await flow.create_shipment_from_order(order, "delivery-sim")
         retrieved = await repo.get_by_id(str(shipment.id))
         assert retrieved is not None
         assert retrieved.provider == "delivery-sim"
@@ -143,8 +143,8 @@ class TestFullParcelDispatchFlow:
         repo = ShipmentRepository(db_session)
         flow = ShipmentFlow(repository=repo)
 
-        s1 = await flow.create_shipment(order, "delivery-sim")
-        s2 = await flow.create_shipment(order, "delivery-sim")
+        s1 = await flow.create_shipment_from_order(order, "delivery-sim")
+        s2 = await flow.create_shipment_from_order(order, "delivery-sim")
         assert s1.id != s2.id
         assert s1.external_id != s2.external_id
         assert s1.tracking_number != s2.tracking_number
@@ -158,7 +158,7 @@ class TestFullParcelDispatchFlow:
         repo = ShipmentRepository(db_session)
         flow = ShipmentFlow(repository=repo)
 
-        shipment = await flow.create_shipment(order, "delivery-sim")
+        shipment = await flow.create_shipment_from_order(order, "delivery-sim")
         sid = str(shipment.id)
         assert sid in _sim_state
         assert _sim_state[sid] == "created"

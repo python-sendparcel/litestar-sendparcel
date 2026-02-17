@@ -161,7 +161,7 @@ async def order_ship(order_id: int, request: Request) -> Redirect:
 
         repo = ShipmentRepository(session)
         flow = ShipmentFlow(repository=repo)
-        shipment = await flow.create_shipment(order, provider_slug)
+        shipment = await flow.create_shipment_from_order(order, provider_slug)
         with suppress(NotImplementedError):
             shipment = await flow.create_label(shipment)
         await session.commit()

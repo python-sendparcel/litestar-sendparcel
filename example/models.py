@@ -108,9 +108,13 @@ class ShipmentRepository:
         return result
 
     async def create(self, **kwargs) -> Shipment:
-        order = kwargs.pop("order")
+        order_id = kwargs.pop("order_id", None)
+        # Support legacy callers that pass an ``order`` object.
+        order = kwargs.pop("order", None)
+        if order_id is None and order is not None:
+            order_id = getattr(order, "id", order)
         shipment = Shipment(
-            order_id=order.id,
+            order_id=order_id,
             status=str(kwargs.get("status", "new")),
             provider=str(kwargs.get("provider", "")),
             external_id=str(kwargs.get("external_id", "")),

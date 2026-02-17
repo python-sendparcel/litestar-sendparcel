@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from litestar_sendparcel.config import SendparcelConfig
+from litestar_sendparcel.retry import compute_next_retry_at, process_due_retries
 
 
 @pytest.fixture
@@ -36,8 +37,6 @@ def config():
 
 def test_compute_backoff():
     """Backoff increases exponentially."""
-    from litestar_sendparcel.retry import compute_next_retry_at
-
     base = 10
     t1 = compute_next_retry_at(attempt=1, backoff_seconds=base)
     t2 = compute_next_retry_at(attempt=2, backoff_seconds=base)
@@ -51,8 +50,6 @@ def test_compute_backoff():
 
 def test_compute_backoff_first_attempt():
     """First attempt backoff is base_seconds."""
-    from litestar_sendparcel.retry import compute_next_retry_at
-
     now = datetime.now(tz=UTC)
     result = compute_next_retry_at(attempt=1, backoff_seconds=60)
     expected_min = now + timedelta(seconds=55)
@@ -62,8 +59,6 @@ def test_compute_backoff_first_attempt():
 
 async def test_process_retries_empty(mock_retry_store, mock_repo, config):
     """No retries to process — does nothing."""
-    from litestar_sendparcel.retry import process_due_retries
-
     processed = await process_due_retries(
         retry_store=mock_retry_store,
         repository=mock_repo,
@@ -74,8 +69,6 @@ async def test_process_retries_empty(mock_retry_store, mock_repo, config):
 
 async def test_process_retries_success(mock_retry_store, mock_repo, config):
     """Successful retry marks as succeeded."""
-    from litestar_sendparcel.retry import process_due_retries
-
     shipment = AsyncMock()
     shipment.id = "s-1"
     shipment.provider = "dummy"
@@ -113,8 +106,6 @@ async def test_process_retries_failure_under_max(
     mock_retry_store, mock_repo, config
 ):
     """Failed retry under max_attempts marks as failed."""
-    from litestar_sendparcel.retry import process_due_retries
-
     shipment = AsyncMock()
     shipment.id = "s-1"
     shipment.provider = "dummy"
@@ -152,8 +143,6 @@ async def test_process_retries_failure_under_max(
 
 async def test_process_retries_exhausted(mock_retry_store, mock_repo, config):
     """Failed retry at max_attempts marks as exhausted."""
-    from litestar_sendparcel.retry import process_due_retries
-
     shipment = AsyncMock()
     shipment.id = "s-1"
     shipment.provider = "dummy"
@@ -193,8 +182,6 @@ async def test_process_retries_shipment_not_found(
     mock_retry_store, mock_repo, config
 ):
     """Retry for missing shipment is marked exhausted."""
-    from litestar_sendparcel.retry import process_due_retries
-
     mock_repo.get_by_id = AsyncMock(side_effect=KeyError("s-1"))
 
     mock_retry_store.get_due_retries = AsyncMock(

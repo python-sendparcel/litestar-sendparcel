@@ -3,6 +3,8 @@
 
 from pathlib import Path
 
+import pytest
+
 import litestar_sendparcel
 
 
@@ -63,7 +65,5 @@ def test_lazy_import_schemas():
 
 def test_getattr_raises_for_unknown():
     """Unknown attribute raises AttributeError."""
-    import pytest
-
     with pytest.raises(AttributeError, match="no_such_attribute"):
         litestar_sendparcel.no_such_attribute  # noqa: B018

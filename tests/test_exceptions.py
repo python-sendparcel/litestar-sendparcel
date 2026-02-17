@@ -2,13 +2,22 @@
 
 from litestar import Litestar, get
 from litestar.testing import TestClient
+from sendparcel.exceptions import (
+    CommunicationError,
+    InvalidCallbackError,
+    InvalidTransitionError,
+    SendParcelException,
+)
 
-from litestar_sendparcel.exceptions import EXCEPTION_HANDLERS
+from litestar_sendparcel.exceptions import (
+    EXCEPTION_HANDLERS,
+    ConfigurationError,
+    ShipmentNotFoundError,
+)
 
 
 def test_sendparcel_exception_returns_400():
     """SendParcelException maps to 400."""
-    from sendparcel.exceptions import SendParcelException
 
     @get("/test")
     async def handler() -> None:
@@ -28,7 +37,6 @@ def test_sendparcel_exception_returns_400():
 
 def test_communication_error_returns_502():
     """CommunicationError maps to 502."""
-    from sendparcel.exceptions import CommunicationError
 
     @get("/test")
     async def handler() -> None:
@@ -46,7 +54,6 @@ def test_communication_error_returns_502():
 
 def test_invalid_callback_returns_400():
     """InvalidCallbackError maps to 400."""
-    from sendparcel.exceptions import InvalidCallbackError
 
     @get("/test")
     async def handler() -> None:
@@ -64,7 +71,6 @@ def test_invalid_callback_returns_400():
 
 def test_invalid_transition_returns_409():
     """InvalidTransitionError maps to 409."""
-    from sendparcel.exceptions import InvalidTransitionError
 
     @get("/test")
     async def handler() -> None:
@@ -82,7 +88,6 @@ def test_invalid_transition_returns_409():
 
 def test_shipment_not_found_returns_404():
     """ShipmentNotFoundError maps to 404."""
-    from litestar_sendparcel.exceptions import ShipmentNotFoundError
 
     @get("/test")
     async def handler() -> None:
@@ -102,7 +107,6 @@ def test_shipment_not_found_returns_404():
 
 def test_configuration_error_returns_500():
     """ConfigurationError maps to 500."""
-    from litestar_sendparcel.exceptions import ConfigurationError
 
     @get("/test")
     async def handler() -> None:

@@ -28,7 +28,14 @@ class DeliverySimProvider(BaseProvider):
     supported_services: ClassVar[list[str]] = ["standard"]
     user_selectable: ClassVar[bool] = False
 
-    async def create_shipment(self, **kwargs) -> ShipmentCreateResult:
+    async def create_shipment(
+        self,
+        *,
+        sender_address=None,
+        receiver_address=None,
+        parcels=None,
+        **kwargs,
+    ) -> ShipmentCreateResult:
         shipment_id = str(self.shipment.id)
         tracking = f"SIM-{uuid4().hex[:8].upper()}"
         _sim_state[shipment_id] = ShipmentStatus.CREATED
