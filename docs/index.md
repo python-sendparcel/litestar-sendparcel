@@ -1,6 +1,6 @@
 # litestar-sendparcel
 
-Litestar adapter for [python-sendparcel](https://github.com/your-org/python-sendparcel) — a framework-agnostic parcel shipping library.
+Litestar adapter for [python-sendparcel](https://github.com/python-sendparcel/python-sendparcel) — a framework-agnostic parcel shipping library.
 
 ## Contents
 

@@ -2,9 +2,9 @@
 
 [![PyPI](https://img.shields.io/pypi/v/litestar-sendparcel.svg)](https://pypi.org/project/litestar-sendparcel/)
 [![Python Version](https://img.shields.io/pypi/pyversions/litestar-sendparcel.svg)](https://pypi.org/project/litestar-sendparcel/)
-[![License](https://img.shields.io/pypi/l/litestar-sendparcel.svg)](https://github.com/sendparcel/litestar-sendparcel/blob/main/LICENSE)
+[![License](https://img.shields.io/pypi/l/litestar-sendparcel.svg)](https://github.com/python-sendparcel/litestar-sendparcel/blob/main/LICENSE)
 
-Litestar framework adapter for [python-sendparcel](https://github.com/sendparcel/python-sendparcel)
+Litestar framework adapter for [python-sendparcel](https://github.com/python-sendparcel/python-sendparcel)
 — a pluggable shipping and parcel delivery library for Python.
 
 > **Alpha (0.1.0)** — The API is functional but may change before 1.0.
@@ -298,10 +298,10 @@ Created and maintained by [Dominik Kozaczko](mailto:dominik@kozaczko.info).
 
 Built on top of:
 
-- [python-sendparcel](https://github.com/sendparcel/python-sendparcel) — core shipping abstraction
+- [python-sendparcel](https://github.com/python-sendparcel/python-sendparcel) — core shipping abstraction
 - [Litestar](https://litestar.dev/) — high-performance async Python web framework
 - [SQLAlchemy](https://www.sqlalchemy.org/) — Python SQL toolkit (optional)
 
 ## License
 
-[MIT](https://github.com/sendparcel/litestar-sendparcel/blob/main/LICENSE)
+[MIT](https://github.com/python-sendparcel/litestar-sendparcel/blob/main/LICENSE)

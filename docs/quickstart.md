@@ -54,7 +54,7 @@ class MyShipmentRepository:
         return shipment
 ```
 
-For a production example using SQLAlchemy, see the [example app](https://github.com/your-org/litestar-sendparcel/tree/main/example).
+For a production example using SQLAlchemy, see the [example app](https://github.com/python-sendparcel/litestar-sendparcel/tree/main/example).
 
 ### 2. Configure the plugin
 
@@ -129,4 +129,4 @@ shipping_router = create_shipping_router(
 
 - {doc}`configuration` — Full configuration reference
 - {doc}`api` — API reference
-- [Example app](https://github.com/your-org/litestar-sendparcel/tree/main/example) — Complete working example with SQLAlchemy, Jinja2 templates, and HTMX
+- [Example app](https://github.com/python-sendparcel/litestar-sendparcel/tree/main/example) — Complete working example with SQLAlchemy, Jinja2 templates, and HTMX
