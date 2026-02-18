@@ -3,7 +3,13 @@
 from litestar import Litestar
 from litestar.testing import TestClient
 from sendparcel.exceptions import CommunicationError, InvalidCallbackError
-from sendparcel.provider import BaseProvider
+from sendparcel.provider import (
+    BaseProvider,
+    CancellableProvider,
+    LabelProvider,
+    PullStatusProvider,
+    PushCallbackProvider,
+)
 from sendparcel.registry import registry
 
 from litestar_sendparcel.config import SendparcelConfig
@@ -17,7 +23,13 @@ _DIRECT_PAYLOAD = {
 }
 
 
-class DummyProvider(BaseProvider):
+class DummyProvider(
+    BaseProvider,
+    LabelProvider,
+    PushCallbackProvider,
+    PullStatusProvider,
+    CancellableProvider,
+):
     slug = "dummy"
     display_name = "Dummy"
 
@@ -106,7 +118,13 @@ def test_callback_invalid_token_returns_400(repository, retry_store) -> None:
         assert len(retry_store.events) == 0
 
 
-class FailingProvider(BaseProvider):
+class FailingProvider(
+    BaseProvider,
+    LabelProvider,
+    PushCallbackProvider,
+    PullStatusProvider,
+    CancellableProvider,
+):
     """Provider that raises CommunicationError on callback."""
 
     slug = "failing"

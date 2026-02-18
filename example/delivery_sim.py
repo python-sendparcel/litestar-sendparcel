@@ -8,7 +8,12 @@ from uuid import uuid4
 from litestar import Response, Router, get, post
 from litestar.response import Template
 from sendparcel.enums import ShipmentStatus
-from sendparcel.provider import BaseProvider
+from sendparcel.provider import (
+    BaseProvider,
+    CancellableProvider,
+    LabelProvider,
+    PullStatusProvider,
+)
 from sendparcel.types import (
     LabelInfo,
     ShipmentCreateResult,
@@ -19,7 +24,12 @@ from sendparcel.types import (
 _sim_state: dict[str, str] = {}
 
 
-class DeliverySimProvider(BaseProvider):
+class DeliverySimProvider(
+    BaseProvider,
+    LabelProvider,
+    PullStatusProvider,
+    CancellableProvider,
+):
     """Simulated delivery provider for the example app."""
 
     slug: ClassVar[str] = "delivery-sim"

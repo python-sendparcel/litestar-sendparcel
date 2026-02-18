@@ -9,7 +9,13 @@ import pytest
 from litestar import Litestar
 from litestar.testing import TestClient
 from sendparcel.exceptions import InvalidCallbackError
-from sendparcel.provider import BaseProvider
+from sendparcel.provider import (
+    BaseProvider,
+    CancellableProvider,
+    LabelProvider,
+    PullStatusProvider,
+    PushCallbackProvider,
+)
 from sendparcel.registry import registry
 
 from litestar_sendparcel.config import SendparcelConfig
@@ -108,7 +114,13 @@ class RetryStore:
         pass
 
 
-class DummyTestProvider(BaseProvider):
+class DummyTestProvider(
+    BaseProvider,
+    LabelProvider,
+    PushCallbackProvider,
+    PullStatusProvider,
+    CancellableProvider,
+):
     """Deterministic provider for HTTP route tests."""
 
     slug = "test-dummy"
