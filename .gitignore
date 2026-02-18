@@ -25,12 +25,16 @@ dist/
 # IDE
 .vscode/
 .idea/
+.sisyphus/
 
 # Docs build
 docs/_build/
 
 # OS
 .DS_Store
+
+# Databases
+*.db
 
 # uv
 uv.lock
